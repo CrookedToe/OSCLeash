@@ -76,7 +76,7 @@ if __name__ == "__main__":
     try:
         # Manage data coming in
         if len(leashes) == 0: raise Exception("No leashes found. Please update config file.")
-        package = Package(leashes)
+        package = Package(leashes, configData['UseOSCQuery'])
         package.listen()
 
         # Start server
