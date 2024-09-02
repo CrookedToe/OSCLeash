@@ -136,7 +136,12 @@ class Program:
 
             leash.Active = False
             leash.resetMovement()
-            self.leashOutput(0.0, 0.0, 0.0, 0, leash.settings)
+            # Very important stop message, if missed you'll walk forever.
+            # extra delay to prevent it from being sent too quickly for VRC to handle.
+            # fires twice because... why not? Everything breaks if you miss it.
+            for _ in range(2):
+                time.sleep(leash.settings.ActiveDelay) 
+                self.leashOutput(0.0, 0.0, 0.0, 0, leash.settings)
 
             leash.wasGrabbed = False
             self.resetProgram()
