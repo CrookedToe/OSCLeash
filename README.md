@@ -35,9 +35,10 @@ __This app does not provide a model for a Leash at this time.__ <Br>
 4. Select the `Compass` object and assign the source of the `Position constraint` to the **first** bone of your leash.
 5. You can find `Aim Needle` as a child of compass. Assign the source of the `Aim Constraint` to the **last** bone of your leash.
 6. (**Optional**) You can animate the compass object off for remote users using IsLocal. Saves some performance!
-7. Enable OSC in VRChat settings. (Or reset OSC if you updated an avatar!) ~ [Tutorial](https://raw.githubusercontent.com/ZenithVal/OSCLeash/main/Resources/HowResetOSC.png)
-8. Run the OSCLeash app and get pulled about!
-9. Visit [Config](#config) and fine tune settings for your taste
+7. (**Optional**) You can add this to the quest version and use [this](https://creators.vrchat.com/worlds/udon/networking/network-id-utility/#:~:text=Network%20IDs%20are%20the%20link,number%20assigned%20to%20a%20GameObject.) or [this](https://kurotu.github.io/VRCQuestTools/docs/references/components/network-id-assigner/) to allow phybone sync for quest support.
+8. Enable OSC in VRChat settings. (Or reset OSC if you updated an avatar!) ~ [Tutorial](https://raw.githubusercontent.com/ZenithVal/OSCLeash/main/Resources/HowResetOSC.png)
+9. Run the OSCLeash app and get pulled about!
+10. Visit [Config](#config) and fine tune settings for your taste
 
 ---
 </details><br>
