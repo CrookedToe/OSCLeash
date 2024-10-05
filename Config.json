@@ -15,7 +15,7 @@
         "InactiveDelay": 0.5,
         "Logging": false,
         "XboxJoystickMovement": false,
-        "UseOSCQuery": true,
+        "UseOSCQuery": false,
         
         "PhysboneParameters":
         [

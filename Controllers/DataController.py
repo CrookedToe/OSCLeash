@@ -19,7 +19,7 @@ DefaultConfig = {
         "InactiveDelay": 0.5,
         "Logging": False,
         "XboxJoystickMovement": False,
-        "UseOSCQuery": True,
+        "UseOSCQuery": False,
         
         "PhysboneParameters":
         [
