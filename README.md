@@ -34,8 +34,8 @@ __This app does not provide a model for a Leash at this time.__ <Br>
 3. Select the `Leash Physbone` object and assign the Root Transform of the Physbone to the first bone of your leash.
 4. Select the `Compass` object and assign the source of the `Position constraint` to the **first** bone of your leash.
 5. You can find `Aim Needle` as a child of compass. Assign the source of the `Aim Constraint` to the **last** bone of your leash.
-6. (**Optional**) You can animate the compass object off for remote users using IsLocal. Saves some performance!
-7. (**Optional**) You can add this to the quest version and use [this](https://creators.vrchat.com/worlds/udon/networking/network-id-utility/#:~:text=Network%20IDs%20are%20the%20link,number%20assigned%20to%20a%20GameObject.) or [this](https://kurotu.github.io/VRCQuestTools/docs/references/components/network-id-assigner/) to allow phybone sync for quest support.
+6. (**Optional**) You can animate the compass object off for remote users using IsLocal. 
+7. (**Optional**) Cross Quest/PC support? You'll need to sync the Physbone's network ID. **See FAQ.**
 8. Enable OSC in VRChat settings. (Or reset OSC if you updated an avatar!) ~ [Tutorial](https://raw.githubusercontent.com/ZenithVal/OSCLeash/main/Resources/HowResetOSC.png)
 9. Run the OSCLeash app and get pulled about!
 10. Visit [Config](#config) and fine tune settings for your taste
@@ -260,7 +260,7 @@ If the values are below the deadzones or _IsGrabbed is false, send 0s for the OS
 
 ---
 
-**Q:** OSCLeash says grabbed but I don't get moved. <br>
+**Q:** OSCLeash says grabbed but I don't get moved <br>
 **A1:** This can happen if your leash physbone does not have any stretch. <br>
 **A2:** Make sure self interaction is `enabled`, it's needed for the direction calculation.
 
@@ -273,7 +273,14 @@ If the values are below the deadzones or _IsGrabbed is false, send 0s for the OS
 
 ---
 
-**Q:** How can I run OSCLeash with my other OSC apps? <br>
+**Q:** Quest Support <br>
+**A1:** You'll need to sync the network IDs of your Leash physbone between Quest & PC. <br>
+You can use [VRC's Network ID Utility](https://creators.vrchat.com/worlds/udon/networking/network-id-utility/#:~:text=Network%20IDs%20are%20the%20link,number%20assigned%20to%20a%20GameObject) or the [ID Assigner tool](https://kurotu.github.io/VRCQuestTools/docs/references/components/network-id-assigner/) made by the community. <br>
+**A2:** The OSCLeash app needs to be run on a PC. *(OSC is over the network though)*
+
+---
+
+**Q:** How can I run OSCLeash with my other OSC apps <br>
 **A:** Try out an OSC Router, like [OSC Switch](https://github.com/KaleidonKep99/OpenSoundControlSwitch). I'll add OSCquery support when it whitelists parameters <br> 
 (Or when I get around to a performant C# rewrite) <br>
 
