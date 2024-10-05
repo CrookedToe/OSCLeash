@@ -76,6 +76,7 @@ You can open the json file in your favorite text editor and fine tune your OSCLe
 | InactiveDelay         | Delay in seconds for OSCLeash while not in use                 | 0.5         |
 | Logging               | Logging for Directional compass inputs                         | false       |
 | XboxJoystickMovement  | Alt movement method for an old bug. Removing eventually        | false       |
+| UseOSCQuery           | Enables [OSCQuery](https://docs.vrchat.com/docs/oscquery)      | false       |
 | PhysboneParameters    | A list of Physbones that are leashes                           | see below   |
 | DirectionalParameters | A list of contacts to use for direction calculation            | see below   |
 ---
@@ -102,6 +103,7 @@ You can open the json file in your favorite text editor and fine tune your OSCLe
         "InactiveDelay": 0.5,
         "Logging": false,
         "XboxJoystickMovement": false,
+        "UseOSCQuery": false,
         
         "PhysboneParameters":
         [
@@ -281,8 +283,8 @@ You can use [VRC's Network ID Utility](https://creators.vrchat.com/worlds/udon/n
 ---
 
 **Q:** How can I run OSCLeash with my other OSC apps <br>
-**A:** Try out an OSC Router, like [OSC Switch](https://github.com/KaleidonKep99/OpenSoundControlSwitch). I'll add OSCquery support when it whitelists parameters <br> 
-(Or when I get around to a performant C# rewrite) <br>
+**A1:** Enable OSCQuery by setting useOSCQuery to `true` in the config.<br>
+**A2:** Try out a OSC Router, like [OSC Switch](https://github.com/KaleidonKep99/OpenSoundControlSwitch).<br> 
 
 ---
 
@@ -298,7 +300,8 @@ You can use [VRC's Network ID Utility](https://creators.vrchat.com/worlds/udon/n
 - Performant C# Rewrite
   - Turns out python isn't great for really fast stuff?
   - Maybe even C++ if masochistic enough.
-- OSCQuery Support (When whitelisting is fixed)
+- ~~OSCQuery Support (When whitelisting is fixed)~~ 
+  - *Whilelisting still isn't fixed but meh*
 - Anchoring leash to a point in world space when posed.
 - Using a player [Contact Tracker](https://github.com/hfcRed/Player-Tracker/tree/main) to follow automatically.
 - Y axis movement via an OVRAS API
