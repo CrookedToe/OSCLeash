@@ -19,6 +19,7 @@ DefaultConfig = {
         "InactiveDelay": 0.5,
         "Logging": False,
         "XboxJoystickMovement": False,
+        "UseOSCQuery": False,
         
         "PhysboneParameters":
         [
@@ -61,6 +62,7 @@ class ConfigSettings:
             self.Logging = configJson["Logging"]
             self.XboxJoystickMovement = configJson["XboxJoystickMovement"]
             self.Leashes = configJson["PhysboneParameters"]
+            self.UseOSCQuery = configJson["UseOSCQuery"]
         except Exception as e: 
             print('\x1b[1;31;40m' + 'Malformed Config.json contents. Was something missing?' + '\x1b[0m')
             print(f"Exception: {e}\nDefault Config will be loaded.\n")
@@ -84,6 +86,7 @@ class ConfigSettings:
             self.Logging = DefaultConfig["Logging"]
             self.XboxJoystickMovement = DefaultConfig["XboxJoystickMovement"]
             self.Leashes = DefaultConfig["PhysboneParameters"]
+            self.UseOSCQuery = DefaultConfig["UseOSCQuery"]
 
     def addGamepadControls(self, gamepad, runButton):
         self.gamepad = gamepad
