@@ -9,7 +9,7 @@ from Controllers.PackageController import Package
 from Controllers.ThreadController import Program
 
 # Make sure to change this to the correct version number on releases.
-__version__ = "v"+"2.1.3"
+__version__ = "v"+"2.2.0"
 
 def createDefaultConfigFile(configPath): # Creates a default config
     try:
