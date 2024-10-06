@@ -258,7 +258,14 @@ If the values are below the deadzones or _IsGrabbed is false, send 0s for the OS
 **Q:** OSCLeash always says `Started, awaiting input` <br>
 **A1:** Manually Reset OSC by deleting the OSC and OSC.bak folders at `C:\Users\(Your username)\AppData\LocalLow\VRChat\VRChat` <br>
 **A2:** Did you do avatar setup correctly? Make sure your leash physbone matches your config. <br>
-**A3:** This could potentially be a firewall issue, but before that, double check your avatar, pleaaaase. <br>
+**A3:** This could potentially be a firewall issue, but before that, double check your avatar, please. <br>
+
+---
+
+**Q:** Missing scripts on prefab <br>
+**[A1:](https://github.com/ZenithVal/OSCLeash/issues/32)** Your VRC SDK is likely out of date or your project has errors. Please update or fix. <br>
+**A2:** If using the [Modular Avatar](https://modular-avatar.nadena.dev/) prefab, you'll need to have that installed too.
+
 
 ---
 
