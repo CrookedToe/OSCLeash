@@ -1,23 +1,16 @@
 using VRCOSC.App.SDK.Modules;
 using VRCOSC.App.SDK.Parameters;
 using VRCOSC.App.SDK.VRChat;
-using VRCOSC.App.Utils;
-using System.Diagnostics;
-using System.Threading;
 using System.Numerics;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using System.Collections.Generic;
-using System.Linq;
-using System;
-using System.Threading.Tasks;
 
 namespace VRCOSC.Modules.OSCLeash;
 
 [ModuleTitle("OSC Leash")]
 [ModuleDescription("Allows for controlling avatar movement with parameters")]
 [ModuleType(ModuleType.Generic)]
-public class OSCLeashModule : Module
+public class OSCLeashModule : Module, IAsyncDisposable
 {
     private readonly ReaderWriterLockSlim _parameterLock = new();
     private readonly ConcurrentQueue<RegisteredParameter> _parameterQueue = new();
@@ -25,6 +18,7 @@ public class OSCLeashModule : Module
     private const int MAX_QUEUE_SIZE = 1000;
     private const float MOVEMENT_EPSILON = 0.0001f;
     private const int BATCH_SIZE = 10;
+    private bool _isDisposed;
 
     private readonly struct MovementLimits
     {
@@ -840,15 +834,29 @@ public class OSCLeashModule : Module
 
     protected override async Task OnModuleStop()
     {
+        await DisposeAsync();
+        await base.OnModuleStop();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_isDisposed) return;
+
         try
         {
-            // Clean up resources
-            _parameterLock?.Dispose();
-            await base.OnModuleStop();
+            // Dispose of managed resources
+            if (_parameterLock != null)
+            {
+                _parameterLock.Dispose();
+            }
+
+            _isDisposed = true;
         }
         catch (Exception e)
         {
-            Log($"Error stopping module: {e.Message}");
+            Log($"Error during async disposal: {e.Message}");
         }
+
+        await ValueTask.CompletedTask;
     }
 } 
