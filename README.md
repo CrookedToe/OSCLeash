@@ -1,15 +1,15 @@
-<div align="Center">
-    <h3 align="Center">
-      A VRChat OSC module for VRCOSC that enables avatar movement control through physbone parameters. <br>
-      Perfect for leashes, tails, or hand holding!
+<div align="center">
+    <h1>OSCLeash</h1>
+    <h3>
+        A VRChat OSC module for VRCOSC that enables avatar movement control through physbone parameters.<br>
+        Perfect for leashes, tails, or hand holding!
     </h3>
-    <div align="Center">
-      <p align="Center">
-        <a href="https://discord.gg/7VAm3twDyy"><img alt="Discord Badge" src="https://img.shields.io/discord/955364088156921867?color=5865f2&label=Discord&logo=discord&logoColor=https%3A%2F%2Fshields.io%2Fcategory%2Fother"/></a>
+    <p>
         <a href="https://github.com/ZenithVal/OSCLeash/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/ZenithVal/OSCLeash?label=License"></a>
-      </p>
-    </div>
+    </p>
 </div>
+
+> ⚠️ **DISCLAIMER**: This project is currently a major work in progress (WIP). Features, documentation, and functionality may be incomplete or subject to significant changes.
 
 # Features
 - Smooth, responsive movement control through physbone parameters
@@ -90,19 +90,10 @@ The module processes physbone parameters in real-time to control avatar movement
 - **Quest Compatibility**: Ensure physbone network IDs are synced between platforms
 
 ## Getting Help
-- Join the [Discord](https://discord.gg/7VAm3twDyy) for support
-- Create an [Issue](https://github.com/ZenithVal/OSCLeash/issues) for bug reports
+- Join the [Discord](https://discord.gg/vrcosc-1000862183963496519) for VRCOSC support
+- Create an [Issue](https://github.com/CrookedToe/OSCLeash/issues) for bug reports
 - Check VRCOSC logs for any error messages
-
-# Building from Source
-```bash
-dotnet build
 ```
-
-# Credits
-- Original Python implementation by @ZenithVal and @ALeonic
-- VRCOSC integration support by @VolcanicArts
-- Community contributions and testing
 
 # Parameter Naming
 The module expects the following parameter naming convention for your avatar:
@@ -147,32 +138,7 @@ Enable safety limits to prevent excessive movement:
 - `MaxAcceleration` - Maximum speed change rate
 - `MaxTurnRate` - Maximum turning speed
 
-# Development Setup
-
-## Prerequisites
-- Visual Studio 2022 or later
-- .NET 8.0 SDK
-- VRCOSC SDK package
-
-## Environment Setup
-1. Clone the repository
-```bash
-git clone https://github.com/YourRepo/OSCLeash.git
-cd OSCLeash
-```
-
-2. Install the VRCOSC SDK package
-```bash
-dotnet add package VolcanicArts.VRCOSC.SDK --version 2024.1223.0
-```
-
-3. Build the project
-```bash
-dotnet build
-```
-
-## Testing
-1. Build the project in Debug configuration
-2. Copy the DLL to your VRCOSC packages folder
-3. Enable developer mode in VRCOSC for detailed logging
-4. Use the VRCOSC test tools to simulate parameter changes
+# Credits
+- Original Python implementation by @ZenithVal and @ALeonic
+- VRCOSC integration support by @VolcanicArts
+- Community contributions and testing
