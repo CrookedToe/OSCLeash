@@ -1,0 +1,383 @@
+<UserControl x:Class="VRCOSC.Modules.OSCLeash.UI.LeashModuleSettingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:core="clr-namespace:VRCOSC.App.UI.Core;assembly=VRCOSC.App"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="300">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <Border Background="{StaticResource CBackground1}" Margin="10"
+                CornerRadius="5" VerticalAlignment="Top">
+            <core:SpacedStackPanel Spacing="10" Margin="10">
+                <!-- Leash Configuration -->
+                <TextBlock Text="Leash Configuration" Foreground="{StaticResource CForeground1}" 
+                         FontSize="16" FontWeight="SemiBold" Margin="0,5,0,0"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Variable Name" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Base name of your leash parameters (e.g., 'Leash' for Leash_IsGrabbed)"/>
+                    <TextBox Grid.Column="1" Width="100" Margin="5,0,0,0" 
+                             Text="{Binding LeashVariable.Value, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Leash Direction" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Direction the leash points from (affects turning behavior)"/>
+                    <ComboBox Grid.Column="1" Width="100" Margin="5,0,0,0"
+                             SelectedValue="{Binding LeashDirection.Value, UpdateSourceTrigger=PropertyChanged}"
+                             SelectedValuePath="Tag"
+                             VerticalAlignment="Center">
+                        <ComboBoxItem Content="North" Tag="North"/>
+                        <ComboBoxItem Content="South" Tag="South"/>
+                        <ComboBoxItem Content="East" Tag="East"/>
+                        <ComboBoxItem Content="West" Tag="West"/>
+                    </ComboBox>
+                </Grid>
+
+                <!-- Movement Settings -->
+                <TextBlock Text="Movement Settings" Foreground="{StaticResource CForeground1}" 
+                         FontSize="16" FontWeight="SemiBold" Margin="0,10,0,0"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Walk Deadzone" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Minimum force required to start walking"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="1" 
+                            Value="{Binding WalkDeadzone.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding WalkDeadzone.Value, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Run Deadzone" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Force required to switch from walking to running"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="1" 
+                            Value="{Binding RunDeadzone.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding RunDeadzone.Value, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Strength Multiplier" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Overall multiplier for movement force"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="2" 
+                            Value="{Binding StrengthMultiplier.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding StrengthMultiplier.Value, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- Turning Settings -->
+                <TextBlock Text="Turning Settings" Foreground="{StaticResource CForeground1}" 
+                         FontSize="16" FontWeight="SemiBold" Margin="0,10,0,0"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Enable Turning" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Toggle turning functionality"/>
+                    <CheckBox Grid.Column="1" IsChecked="{Binding TurningEnabled.Value, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Turning Multiplier" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Speed multiplier for turning"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="2" 
+                            Value="{Binding TurningMultiplier.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding TurningMultiplier.Value, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Turning Deadzone" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Minimum force required to start turning"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="1" 
+                            Value="{Binding TurningDeadzone.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding TurningDeadzone.Value, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Turning Goal (degrees)" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Maximum turning angle in degrees"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="180" 
+                            Value="{Binding TurningGoal.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="5" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding TurningGoal.Value, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Smooth Turning Speed" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="How quickly turning interpolates to target angle"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="1" 
+                            Value="{Binding SmoothTurningSpeed.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding SmoothTurningSpeed.Value, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Turning Momentum" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="How much momentum to apply to turning"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="1" 
+                            Value="{Binding TurningMomentum.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding TurningMomentum.Value, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- Vertical Movement Settings -->
+                <TextBlock Text="Vertical Movement Settings" Foreground="{StaticResource CForeground1}" 
+                         FontSize="16" FontWeight="SemiBold" Margin="0,10,0,0"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Up/Down Compensation" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Adjusts movement based on vertical pull"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="2" 
+                            Value="{Binding UpDownCompensation.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding UpDownCompensation.Value, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Up/Down Deadzone" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Minimum vertical force to affect movement"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="1" 
+                            Value="{Binding UpDownDeadzone.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding UpDownDeadzone.Value, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- Safety Settings -->
+                <TextBlock Text="Safety Settings" Foreground="{StaticResource CForeground1}" 
+                         FontSize="16" FontWeight="SemiBold" Margin="0,20,0,0"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Enable Safety Limits" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Enable movement safety limits to prevent sudden or extreme movements"/>
+                    <CheckBox Grid.Column="1" IsChecked="{Binding EnableSafetyLimits.Value, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+                <Grid IsEnabled="{Binding EnableSafetyLimits.Value}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Maximum Velocity" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Maximum movement speed allowed"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="2" 
+                            Value="{Binding MaxVelocity.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.1" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding MaxVelocity.Value, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+                <Grid IsEnabled="{Binding EnableSafetyLimits.Value}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Maximum Acceleration" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Maximum rate of speed change allowed"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="5" 
+                            Value="{Binding MaxAcceleration.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.2" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding MaxAcceleration.Value, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+                <Grid IsEnabled="{Binding EnableSafetyLimits.Value}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Maximum Turn Rate (degrees/s)" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Maximum turning speed in degrees per second"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="360" 
+                            Value="{Binding MaxTurnRate.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="15" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding MaxTurnRate.Value, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- Movement Enhancement Settings -->
+                <TextBlock Text="Movement Enhancements" Foreground="{StaticResource CForeground1}" 
+                         FontSize="16" FontWeight="SemiBold" Margin="0,20,0,0"/>
+                
+                <!-- Interpolation Settings -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Interpolation Strength" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="How smoothly movement transitions between states"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="1" 
+                            Value="{Binding InterpolationStrength.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding InterpolationStrength.Value, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="State Transition Time" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Time taken to transition between movement states (in seconds)"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="1" 
+                            Value="{Binding StateTransitionTime.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding StateTransitionTime.Value, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- Movement Curve Settings -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Movement Curve Type" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Type of curve used for movement acceleration"/>
+                    <ComboBox Grid.Column="1" Width="100" Margin="5,0,0,0"
+                             SelectedValue="{Binding MovementCurveType.Value, UpdateSourceTrigger=PropertyChanged}"
+                             SelectedValuePath="Tag"
+                             VerticalAlignment="Center">
+                        <ComboBoxItem Content="Linear" Tag="Linear"/>
+                        <ComboBoxItem Content="Quadratic" Tag="Quadratic"/>
+                        <ComboBoxItem Content="Cubic" Tag="Cubic"/>
+                        <ComboBoxItem Content="Exponential" Tag="Exponential"/>
+                    </ComboBox>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Curve Exponent" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="Power of the movement curve (higher = sharper acceleration)"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="1" Maximum="4" 
+                            Value="{Binding CurveExponent.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.1" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding CurveExponent.Value, StringFormat=N1, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Curve Smoothing" Foreground="{StaticResource CForeground2}" 
+                             FontSize="14" VerticalAlignment="Center"
+                             ToolTip="How much to smooth out the movement curve"/>
+                    <Slider Grid.Column="1" Width="200" Minimum="0" Maximum="1" 
+                            Value="{Binding CurveSmoothing.Value, UpdateSourceTrigger=PropertyChanged}" 
+                            TickFrequency="0.05" IsSnapToTickEnabled="True"/>
+                    <TextBox Grid.Column="2" Width="50" Margin="5,0,0,0" 
+                             Text="{Binding CurveSmoothing.Value, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" 
+                             VerticalAlignment="Center"/>
+                </Grid>
+            </core:SpacedStackPanel>
+        </Border>
+    </ScrollViewer>
+</UserControl> 

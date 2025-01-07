@@ -1,8 +1,19 @@
-*build/build
-*build/dist
-*Scripts/build
-*Scripts/dist
-Build/OSCLeash.spec
+@"
+bin/
+obj/
+/build
+/Releases
+/publish
+/publish.sh
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+/.idea
+*.user
+.vs/
+Leashcode/
+VRCOSC-Modules/
+OSCLeash.sln
+.cursorignore
+"@ | Out-File -FilePath .gitignore -Encoding utf8
 
-#Python Stuff
-__pycache__/
