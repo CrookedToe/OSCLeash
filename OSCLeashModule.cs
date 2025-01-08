@@ -2,12 +2,15 @@ using VRCOSC.App.SDK.Modules;
 using VRCOSC.App.SDK.Parameters;
 using VRCOSC.App.SDK.VRChat;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace VRCOSC.Modules.OSCLeash;
 
 [ModuleTitle("OSC Leash")]
 [ModuleDescription("Allows for controlling avatar movement with parameters")]
 [ModuleType(ModuleType.Generic)]
+[ModulePrefab("OSCLeash", "https://github.com/CrookedToe/OSCLeash/tree/main/Unity")]
+[ModuleInfo("https://github.com/CrookedToe/OSCLeash")]
 public class OSCLeashModule : Module
 {
     private const float MOVEMENT_EPSILON = 0.0001f;
@@ -20,6 +23,12 @@ public class OSCLeashModule : Module
     private float _stretch;
     private string _currentBaseName = string.Empty;
     private string _currentDirection = "North";
+    
+    // Movement state tracking
+    private float _currentVertical;
+    private float _currentHorizontal;
+    private bool _currentRunState;
+    private float _transitionTimer;
 
     // Helper function for smooth interpolation
     private static float Lerp(float start, float end, float amount)
@@ -29,122 +38,65 @@ public class OSCLeashModule : Module
 
     protected override void OnPreLoad()
     {
-        CreateCustomSetting(LeashSetting.Settings, new OSCLeashModuleSettings());
-        var settings = GetSetting<OSCLeashModuleSettings>(LeashSetting.Settings);
-        
-        // Validate base name
-        if (string.IsNullOrEmpty(settings.LeashVariable.Value))
+        try
         {
-            Log("Warning: Empty leash variable name, using 'Leash' as default");
-            settings.LeashVariable.Value = "Leash";
-        }
-        
-        // Validate movement settings
-        if (settings.WalkDeadzone.Value < 0 || settings.WalkDeadzone.Value > 1)
-        {
-            Log($"Warning: Walk deadzone {settings.WalkDeadzone.Value} outside valid range [0,1], clamping");
-            settings.WalkDeadzone.Value = Math.Clamp(settings.WalkDeadzone.Value, 0, 1);
-        }
-        
-        if (settings.RunDeadzone.Value < settings.WalkDeadzone.Value || settings.RunDeadzone.Value > 1)
-        {
-            Log($"Warning: Run deadzone {settings.RunDeadzone.Value} invalid, clamping");
-            settings.RunDeadzone.Value = Math.Clamp(settings.RunDeadzone.Value, settings.WalkDeadzone.Value, 1);
-        }
-        
-        if (settings.MaxVelocity.Value <= 0)
-        {
-            Log($"Warning: Invalid max velocity {settings.MaxVelocity.Value}, using 1.0");
-            settings.MaxVelocity.Value = 1.0f;
-        }
-
-        // Validate turning settings
-        if (settings.TurningEnabled.Value)
-        {
-            if (settings.TurningMultiplier.Value < 0)
+            CreateCustomSetting(LeashSetting.Settings, new OSCLeashModuleSettings());
+            var settings = GetSetting<OSCLeashModuleSettings>(LeashSetting.Settings);
+            
+            LogDebug("Initializing OSCLeash module...");
+            
+            // Validate base name
+            if (string.IsNullOrEmpty(settings.LeashVariable.Value))
             {
-                Log($"Warning: Negative turning multiplier {settings.TurningMultiplier.Value}, using absolute value");
-                settings.TurningMultiplier.Value = Math.Abs(settings.TurningMultiplier.Value);
+                Log("Warning: Empty leash variable name, using 'Leash' as default");
+                settings.LeashVariable.Value = "Leash";
             }
             
-            if (settings.TurningDeadzone.Value < 0 || settings.TurningDeadzone.Value > 1)
-            {
-                Log($"Warning: Turning deadzone {settings.TurningDeadzone.Value} outside valid range [0,1], clamping");
-                settings.TurningDeadzone.Value = Math.Clamp(settings.TurningDeadzone.Value, 0, 1);
-            }
-
-            if (settings.SmoothTurningSpeed.Value < 0)
-            {
-                Log($"Warning: Negative smooth turning speed {settings.SmoothTurningSpeed.Value}, using absolute value");
-                settings.SmoothTurningSpeed.Value = Math.Abs(settings.SmoothTurningSpeed.Value);
-            }
+            // Register parameters
+            var baseName = settings.LeashVariable.Value;
+            RegisterParameter<bool>(LeashParameter.IsGrabbed, $"{baseName}_IsGrabbed", ParameterMode.Read, "Is Grabbed", "Whether the leash is currently grabbed");
+            RegisterParameter<float>(LeashParameter.Stretch, $"{baseName}_Stretch", ParameterMode.Read, "Stretch", "How much the leash is stretched");
+            RegisterParameter<float>(LeashParameter.ZPositive, $"{baseName}_ZPositive", ParameterMode.Read, "Forward Force", "Forward movement force");
+            RegisterParameter<float>(LeashParameter.ZNegative, $"{baseName}_ZNegative", ParameterMode.Read, "Backward Force", "Backward movement force");
+            RegisterParameter<float>(LeashParameter.XPositive, $"{baseName}_XPositive", ParameterMode.Read, "Right Force", "Right movement force");
+            RegisterParameter<float>(LeashParameter.XNegative, $"{baseName}_XNegative", ParameterMode.Read, "Left Force", "Left movement force");
+            RegisterParameter<float>(LeashParameter.YPositive, $"{baseName}_YPositive", ParameterMode.Read, "Up Force", "Upward movement force");
+            RegisterParameter<float>(LeashParameter.YNegative, $"{baseName}_YNegative", ParameterMode.Read, "Down Force", "Downward movement force");
+            
+            LogDebug("OSCLeash module initialized successfully");
         }
+        catch (Exception e)
+        {
+            Log($"Failed to initialize OSCLeash module: {e.Message}");
+            LogDebug($"Stack trace: {e.StackTrace}");
+        }
+    }
 
-        var fullBaseName = settings.LeashVariable.Value;
-
-        // Check for direction suffix in the base name
-        var direction = settings.LeashDirection.Value; // Use current direction as default
+    private void RegisterParameters(string baseName)
+    {
+        LogDebug($"Registering parameters with base name: {baseName}");
         
-        // Common direction suffixes
-        if (fullBaseName.EndsWith("_North", StringComparison.OrdinalIgnoreCase))
-        {
-            direction = "North";
-        }
-        else if (fullBaseName.EndsWith("_South", StringComparison.OrdinalIgnoreCase))
-        {
-            direction = "South";
-        }
-        else if (fullBaseName.EndsWith("_East", StringComparison.OrdinalIgnoreCase))
-        {
-            direction = "East";
-        }
-        else if (fullBaseName.EndsWith("_West", StringComparison.OrdinalIgnoreCase))
-        {
-            direction = "West";
-        }
-
-        // Update direction setting if we found a direction suffix
-        if (direction != settings.LeashDirection.Value)
-        {
-            settings.LeashDirection.Value = direction;
-            Log($"Detected direction from parameter name: {direction}");
-        }
-
-        // Register core parameters using the full base name
-        RegisterParameter<bool>(LeashParameter.IsGrabbed, $"{fullBaseName}_IsGrabbed", ParameterMode.Read, "Leash Grabbed", "Whether the leash is currently grabbed");
-        RegisterParameter<float>(LeashParameter.Stretch, $"{fullBaseName}_Stretch", ParameterMode.Read, "Leash Stretch", "The stretch value of the leash physbone");
+        // Register core parameters
+        RegisterParameter<bool>(LeashParameter.IsGrabbed, $"{baseName}_IsGrabbed", ParameterMode.Read, 
+            "Leash Grabbed", "Whether the leash is currently grabbed");
+        RegisterParameter<float>(LeashParameter.Stretch, $"{baseName}_Stretch", ParameterMode.Read, 
+            "Leash Stretch", "The stretch value of the leash physbone");
         
         // Register directional parameters
-        RegisterParameter<float>(LeashParameter.ZPositive, $"{fullBaseName}_ZPositive", ParameterMode.Read, "Forward Pull", "Forward pulling force");
-        RegisterParameter<float>(LeashParameter.XPositive, $"{fullBaseName}_XPositive", ParameterMode.Read, "Right Pull", "Right pulling force");
-        RegisterParameter<float>(LeashParameter.YPositive, $"{fullBaseName}_YPositive", ParameterMode.Read, "Up Pull", "Upward pulling force");
-        RegisterParameter<float>(LeashParameter.ZNegative, $"{fullBaseName}_Z-", ParameterMode.Read, "Backward Pull", "Backward pulling force");
-        RegisterParameter<float>(LeashParameter.XNegative, $"{fullBaseName}_X-", ParameterMode.Read, "Left Pull", "Left pulling force");
-        RegisterParameter<float>(LeashParameter.YNegative, $"{fullBaseName}_Y-", ParameterMode.Read, "Down Pull", "Downward pulling force");
-
-        // Register output parameters
-        RegisterParameter<float>(LeashParameter.Vertical, "/input/Vertical", ParameterMode.Write, "Vertical Movement", "Controls forward/backward movement");
-        RegisterParameter<float>(LeashParameter.Horizontal, "/input/Horizontal", ParameterMode.Write, "Horizontal Movement", "Controls left/right movement");
-        RegisterParameter<float>(LeashParameter.LookHorizontal, "/input/LookHorizontal", ParameterMode.Write, "Look Horizontal", "Controls turning");
-        RegisterParameter<bool>(LeashParameter.Run, "/input/Run", ParameterMode.Write, "Run", "Controls running state");
-
-        // Subscribe to variable name changes
-        settings.LeashVariable.Subscribe(OnVariableNameChanged);
-        settings.LeashDirection.Subscribe(OnDirectionChanged);
+        RegisterParameter<float>(LeashParameter.ZPositive, $"{baseName}_ZPositive", ParameterMode.Read, 
+            "Forward Pull", "Forward pulling force");
+        RegisterParameter<float>(LeashParameter.XPositive, $"{baseName}_XPositive", ParameterMode.Read, 
+            "Right Pull", "Right pulling force");
+        RegisterParameter<float>(LeashParameter.YPositive, $"{baseName}_YPositive", ParameterMode.Read, 
+            "Up Pull", "Upward pulling force");
+        RegisterParameter<float>(LeashParameter.ZNegative, $"{baseName}_Z-", ParameterMode.Read, 
+            "Backward Pull", "Backward pulling force");
+        RegisterParameter<float>(LeashParameter.XNegative, $"{baseName}_X-", ParameterMode.Read, 
+            "Left Pull", "Left pulling force");
+        RegisterParameter<float>(LeashParameter.YNegative, $"{baseName}_Y-", ParameterMode.Read, 
+            "Down Pull", "Downward pulling force");
         
-        _currentBaseName = fullBaseName;
-        _currentDirection = direction;
-    }
-
-    private void OnVariableNameChanged(string newName)
-    {
-        _currentBaseName = newName;
-        OnPreLoad();
-    }
-
-    private void OnDirectionChanged(string newDirection)
-    {
-        _currentDirection = newDirection;
+        LogDebug("Parameter registration complete");
     }
 
     protected override void OnRegisteredParameterReceived(RegisteredParameter parameter)
@@ -155,39 +107,52 @@ public class OSCLeashModule : Module
         switch (parameter.Lookup)
         {
             case LeashParameter.IsGrabbed:
-                _isGrabbed = parameter.GetValue<bool>();
-                if (!_isGrabbed)
+                var newGrabbed = parameter.GetValue<bool>();
+                if (_isGrabbed != newGrabbed)
                 {
-                    ResetMovement();
+                    LogDebug($"Leash grab state changed: {newGrabbed}");
+                    _isGrabbed = newGrabbed;
+                    if (!_isGrabbed)
+                    {
+                        LogDebug("Leash released, resetting movement");
+                        ResetMovement();
+                    }
                 }
                 break;
 
             case LeashParameter.Stretch:
                 _stretch = Math.Clamp(parameter.GetValue<float>(), 0f, 1f);
+                LogDebug($"Leash stretch updated: {_stretch:F3}");
                 break;
 
             case LeashParameter.ZPositive:
                 _positiveForces.Z = Math.Max(0f, parameter.GetValue<float>());
+                LogDebug($"Forward force updated: {_positiveForces.Z:F3}");
                 break;
 
             case LeashParameter.ZNegative:
                 _negativeForces.Z = Math.Max(0f, parameter.GetValue<float>());
+                LogDebug($"Backward force updated: {_negativeForces.Z:F3}");
                 break;
 
             case LeashParameter.XPositive:
                 _positiveForces.X = Math.Max(0f, parameter.GetValue<float>());
+                LogDebug($"Right force updated: {_positiveForces.X:F3}");
                 break;
 
             case LeashParameter.XNegative:
                 _negativeForces.X = Math.Max(0f, parameter.GetValue<float>());
+                LogDebug($"Left force updated: {_negativeForces.X:F3}");
                 break;
 
             case LeashParameter.YPositive:
                 _positiveForces.Y = Math.Max(0f, parameter.GetValue<float>());
+                LogDebug($"Up force updated: {_positiveForces.Y:F3}");
                 break;
 
             case LeashParameter.YNegative:
                 _negativeForces.Y = Math.Max(0f, parameter.GetValue<float>());
+                LogDebug($"Down force updated: {_negativeForces.Y:F3}");
                 break;
         }
 
@@ -195,6 +160,28 @@ public class OSCLeashModule : Module
         {
             UpdateMovement(settings);
         }
+    }
+
+    private void StartNewTransition()
+    {
+        _transitionTimer = 0f;
+    }
+
+    protected override void OnAvatarChange(AvatarConfig? avatarConfig)
+    {
+        // Reset all movement state when avatar changes
+        ResetMovement();
+        
+        // Clear any stored state
+        _positiveForces = Vector3.Zero;
+        _negativeForces = Vector3.Zero;
+        _currentTurnAngle = 0f;
+        _currentVertical = 0f;
+        _currentHorizontal = 0f;
+        _currentRunState = false;
+        _transitionTimer = 0f;
+        _isGrabbed = false;
+        _stretch = 0f;
     }
 
     private void UpdateMovement(OSCLeashModuleSettings settings)
@@ -205,98 +192,119 @@ public class OSCLeashModule : Module
 
         // Calculate base movement values
         var outputMultiplier = _stretch * settings.StrengthMultiplier.Value;
-        var verticalOutput = (_positiveForces.Z - _negativeForces.Z) * outputMultiplier;
-        var horizontalOutput = (_positiveForces.X - _negativeForces.X) * outputMultiplier;
+        var targetVertical = (_positiveForces.Z - _negativeForces.Z) * outputMultiplier;
+        var targetHorizontal = (_positiveForces.X - _negativeForces.X) * outputMultiplier;
 
         // Calculate movement strength
-        var baseStrength = MathF.Sqrt(verticalOutput * verticalOutput + horizontalOutput * horizontalOutput);
+        var baseStrength = MathF.Sqrt(targetVertical * targetVertical + targetHorizontal * targetHorizontal);
 
         // Apply safety limits if enabled
         if (settings.EnableSafetyLimits.Value)
         {
-            verticalOutput = Math.Clamp(verticalOutput, -settings.MaxVelocity.Value, settings.MaxVelocity.Value);
-            horizontalOutput = Math.Clamp(horizontalOutput, -settings.MaxVelocity.Value, settings.MaxVelocity.Value);
+            var originalVertical = targetVertical;
+            var originalHorizontal = targetHorizontal;
+            targetVertical = Math.Clamp(targetVertical, -settings.MaxVelocity.Value, settings.MaxVelocity.Value);
+            targetHorizontal = Math.Clamp(targetHorizontal, -settings.MaxVelocity.Value, settings.MaxVelocity.Value);
         }
         
         // Check walk and run thresholds
+        var targetRunState = false;
+        var movementStateChanged = false;
+
         if (baseStrength < settings.WalkDeadzone.Value)
         {
-            verticalOutput = 0;
-            horizontalOutput = 0;
+            if (targetVertical != 0 || targetHorizontal != 0)
+            {
+                movementStateChanged = true;
+            }
+            targetVertical = 0;
+            targetHorizontal = 0;
             baseStrength = 0;
         }
-        var isRunning = baseStrength >= settings.RunDeadzone.Value;
+        else
+        {
+            // Check if we should be running
+            targetRunState = baseStrength >= settings.RunDeadzone.Value;
+            
+            // Add hysteresis for run state to prevent flickering
+            if (targetRunState != _currentRunState)
+            {
+                // If we're transitioning to running, require a bit more force
+                if (targetRunState && baseStrength < settings.RunDeadzone.Value * 1.1f)
+                {
+                    targetRunState = false;
+                }
+                // If we're transitioning to walking, require a bit less force
+                else if (!targetRunState && baseStrength > settings.RunDeadzone.Value * 0.9f)
+                {
+                    targetRunState = true;
+                }
+                
+                if (targetRunState != _currentRunState)
+                {
+                    movementStateChanged = true;
+                }
+            }
+        }
+
+        // Reset transition timer on movement state changes
+        if (movementStateChanged)
+        {
+            StartNewTransition();
+        }
 
         // Calculate turning if enabled
-        var turningSpeed = 0f;
+        var targetTurnAngle = 0f;
         if (settings.TurningEnabled.Value && baseStrength >= settings.TurningDeadzone.Value)
         {
-            turningSpeed = settings.TurningMultiplier.Value;
+            var turningSpeed = settings.TurningMultiplier.Value;
             
             switch (_currentDirection.ToLower())
             {
                 case "north":
-                    turningSpeed *= horizontalOutput;
-                    if (_positiveForces.X > _negativeForces.X)
-                    {
-                        turningSpeed += _negativeForces.Z;
-                    }
-                    else
-                    {
-                        turningSpeed -= _negativeForces.Z;
-                    }
+                    turningSpeed *= targetHorizontal;
                     break;
 
                 case "south":
-                    turningSpeed *= -horizontalOutput;
-                    if (_positiveForces.X > _negativeForces.X)
-                    {
-                        turningSpeed -= _positiveForces.Z;
-                    }
-                    else
-                    {
-                        turningSpeed += _positiveForces.Z;
-                    }
+                    turningSpeed *= -targetHorizontal;
                     break;
 
                 case "east":
-                    turningSpeed *= verticalOutput;
-                    if (_positiveForces.Z > _negativeForces.Z)
-                    {
-                        turningSpeed += _negativeForces.X;
-                    }
-                    else
-                    {
-                        turningSpeed -= _negativeForces.X;
-                    }
+                    turningSpeed *= -targetVertical;
                     break;
 
                 case "west":
-                    turningSpeed *= -verticalOutput;
-                    if (_positiveForces.Z > _negativeForces.Z)
-                    {
-                        turningSpeed -= _positiveForces.X;
-                    }
-                    else
-                    {
-                        turningSpeed += _positiveForces.X;
-                    }
+                    turningSpeed *= targetVertical;
                     break;
             }
 
-            turningSpeed = Math.Clamp(turningSpeed, -1f, 1f);
-            _currentTurnAngle = Lerp(_currentTurnAngle, turningSpeed, settings.SmoothTurningSpeed.Value * deltaTime);
+            targetTurnAngle = turningSpeed * settings.SmoothTurningSpeed.Value;
         }
-        else
+
+        // Update transition timer
+        _transitionTimer = Math.Min(_transitionTimer + deltaTime, settings.StateTransitionTime.Value);
+        var transitionProgress = settings.StateTransitionTime.Value > 0 
+            ? _transitionTimer / settings.StateTransitionTime.Value 
+            : 1f;
+
+        // Smoothly interpolate movement values
+        _currentVertical = Lerp(_currentVertical, targetVertical, transitionProgress);
+        _currentHorizontal = Lerp(_currentHorizontal, targetHorizontal, transitionProgress);
+        _currentTurnAngle = Lerp(_currentTurnAngle, targetTurnAngle, transitionProgress);
+        
+        // Update run state with hysteresis to prevent flickering
+        if (_currentRunState != targetRunState && transitionProgress >= 1f)
         {
-            _currentTurnAngle = 0;
+            _currentRunState = targetRunState;
         }
 
         // Apply deadzone to movement values
-        if (Math.Abs(horizontalOutput) < MOVEMENT_EPSILON) horizontalOutput = 0;
-        if (Math.Abs(verticalOutput) < MOVEMENT_EPSILON) verticalOutput = 0;
+        if (Math.Abs(_currentHorizontal) < MOVEMENT_EPSILON) _currentHorizontal = 0;
+        if (Math.Abs(_currentVertical) < MOVEMENT_EPSILON) _currentVertical = 0;
+        if (Math.Abs(_currentTurnAngle) < MOVEMENT_EPSILON) _currentTurnAngle = 0;
 
-        SendMovementValues(horizontalOutput, verticalOutput, _currentTurnAngle, isRunning);
+        // Send movement values using player methods
+        SendMovementValues(_currentHorizontal, _currentVertical, _currentTurnAngle, _currentRunState);
     }
 
     private void SendMovementValues(float horizontal, float vertical, float turn, bool isRunning)
@@ -304,29 +312,44 @@ public class OSCLeashModule : Module
         try
         {
             var player = GetPlayer();
-            if (player != null)
+            if (player == null)
             {
-                player.MoveVertical(vertical);
-                player.MoveHorizontal(horizontal);
-                player.LookHorizontal(turn);
-                if (isRunning) player.Run();
-                else player.StopRun();
+                return;
+            }
+
+            // Send run state first to ensure it's applied before movement
+            if (isRunning)
+            {
+                player.Run();
+                // Send movement after a small delay to ensure run state is applied
+                Task.Delay(16).ContinueWith(_ =>
+                {
+                    player.MoveVertical(vertical);
+                    player.MoveHorizontal(horizontal);
+                    player.LookHorizontal(turn);
+                });
             }
             else
             {
-                SendParameter(LeashParameter.Vertical, vertical);
-                SendParameter(LeashParameter.Horizontal, horizontal);
-                SendParameter(LeashParameter.LookHorizontal, turn);
-                SendParameter(LeashParameter.Run, isRunning);
+                player.StopRun();
+                player.MoveVertical(vertical);
+                player.MoveHorizontal(horizontal);
+                player.LookHorizontal(turn);
             }
         }
         catch (Exception e)
         {
             Log($"Error sending movement values: {e.Message}");
-            SendParameter(LeashParameter.Vertical, vertical);
-            SendParameter(LeashParameter.Horizontal, horizontal);
-            SendParameter(LeashParameter.LookHorizontal, turn);
-            SendParameter(LeashParameter.Run, isRunning);
+            
+            // Try to recover by resetting movement
+            try
+            {
+                ResetMovement();
+            }
+            catch (Exception resetError)
+            {
+                Log($"Failed to reset movement: {resetError.Message}");
+            }
         }
     }
 
@@ -334,13 +357,32 @@ public class OSCLeashModule : Module
     {
         _positiveForces = Vector3.Zero;
         _negativeForces = Vector3.Zero;
-        _currentTurnAngle = 0;
-        SendMovementValues(0, 0, 0, false);
-    }
+        _currentTurnAngle = 0f;
+        _currentVertical = 0f;
+        _currentHorizontal = 0f;
+        _currentRunState = false;
+        _transitionTimer = 0f;
+        
+        try
+        {
+            var player = GetPlayer();
+            if (player == null)
+            {
+                LogDebug("Player object not available for reset");
+                return;
+            }
 
-    protected override void OnAvatarChange(AvatarConfig? avatarConfig)
-    {
-        ResetMovement();
+            // Reset movement using player methods
+            player.MoveVertical(0f);
+            player.MoveHorizontal(0f);
+            player.LookHorizontal(0f);
+            player.StopRun();
+        }
+        catch (Exception e)
+        {
+            Log($"Failed to send reset movement values: {e.Message}");
+            LogDebug($"Stack trace: {e.StackTrace}");
+        }
     }
 
     private enum LeashSetting
@@ -357,10 +399,6 @@ public class OSCLeashModule : Module
         XPositive,
         XNegative,
         YPositive,
-        YNegative,
-        Vertical,
-        Horizontal,
-        LookHorizontal,
-        Run
+        YNegative
     }
 } 

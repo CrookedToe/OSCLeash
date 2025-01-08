@@ -13,6 +13,7 @@ riderModule.iml
 .vs/
 Leashcode/
 VRCOSC-Modules/
+VRCOSC/
 OSCLeash.sln
 .cursorignore
 "@ | Out-File -FilePath .gitignore -Encoding utf8
