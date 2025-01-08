@@ -1,6 +1,5 @@
 # OSCLeash
 
-> ⚠️ **WARNING**: This project is currently a Work In Progress. Features may be incomplete, unstable, or subject to significant changes. Use at your own risk and please report any issues you encounter.
 
 <div align="center">
     <h3>
@@ -14,6 +13,7 @@
 
 This is a VRCOSC module port of [ZenithVal's OSCLeash](https://github.com/ZenithVal/OSCLeash), rewritten in C# to work within VRCOSC's module system. While the core functionality remains the same*, this version integrates directly with VRCOSC for a more streamlined experience. For detailed information about the original implementation, advanced features, and troubleshooting, please visit the original repository.
 
+> ⚠️ **WARNING**: This project is currently a Work In Progress. Features may be incomplete, unstable, or subject to significant changes. Use at your own risk and please report any issues you encounter.
 
 # Quick Start Guide
 
