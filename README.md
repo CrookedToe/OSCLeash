@@ -128,18 +128,56 @@ For direction-based leashes, append the direction to the base name:
 - For remote users: Animate compass visibility using IsLocal
 
 ## Movement Curves
-The module supports different movement curve types:
-- `Linear` - Direct mapping (default)
-- `Quadratic` - Smooth acceleration curve
-- `Cubic` - More aggressive acceleration
-- `Exponential` - Customizable power curve with exponent control
-- `Smooth` - Smoothed curve with adjustable transition factor
+The module supports different movement curve types that affect how the leash's stretch translates into movement speed:
+
+- `Linear` - Direct 1:1 mapping between stretch and speed (default)
+  - Most responsive and predictable
+  - Good for precise control and short leashes
+  - Movement speed increases uniformly with stretch
+
+- `Quadratic` - Smooth acceleration curve (x²)
+  - Gentler start with faster acceleration at higher stretch
+  - Good for general use and medium-length leashes
+  - Provides more control in the lower stretch range
+
+- `Cubic` - More aggressive acceleration curve (x³)
+  - Very gentle at low stretch, very fast at high stretch
+  - Good for long leashes or when you want fine control at low stretch
+  - Creates a more dramatic difference between walking and running
+
+- `Exponential` - Customizable power curve (x^n)
+  - Most flexible curve type
+  - Adjustable using the `Curve Exponent` setting
+  - Higher exponents create sharper transitions
+  - Good for fine-tuning the feel of movement
+
+- `Smooth` - Smoothed curve with rounded transitions
+  - Similar to Quadratic but with smoother transitions
+  - Uses `Curve Smoothing` to adjust the roundness
+  - Good for eliminating any sudden movement changes
+  - Best for a natural, fluid feel
 
 The curve behavior can be further customized using:
-- `Curve Exponent`: Controls the power factor for exponential curves
-- `Curve Smoothing`: Adjusts the smoothness of curve transitions
-- `Interpolation Strength`: Controls how quickly values interpolate
-- `State Transition Time`: Sets the duration of state changes
+- `Curve Exponent`: Controls the steepness of exponential curves
+  - Values > 1 make high stretch more sensitive
+  - Values < 1 make low stretch more sensitive
+  - Typical range: 1.5 to 4.0
+
+- `Curve Smoothing`: Adjusts how gradual transitions are
+  - Higher values create more rounded transitions
+  - Lower values create more immediate responses
+  - Typical range: 0.2 to 0.8
+
+- `Interpolation Strength`: Controls movement smoothing
+  - Higher values create smoother but slower responses
+  - Lower values create faster but potentially jerky responses
+  - Typical range: 0.6 to 0.9
+
+- `State Transition Time`: Sets how long state changes take
+  - Affects transitions between walking/running/turning
+  - Higher values feel smoother but less responsive
+  - Lower values feel more responsive but can be abrupt
+  - Typical range: 0.1 to 0.5 seconds
 
 # Troubleshooting
 
