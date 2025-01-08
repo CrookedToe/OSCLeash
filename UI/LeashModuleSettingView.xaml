@@ -316,16 +316,23 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <TextBlock Text="State Transition Time" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="Time to transition between states in seconds (0-1s)"/>
+                     ToolTip="Time to transition between states in seconds (0-2s)"/>
             <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="1" Value="{Binding StateTransitionTime}"/>
+                   Minimum="0" Maximum="2" Value="{Binding StateTransitionTime}"/>
             <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}">
                 <TextBox.Text>
-                    <MultiBinding StringFormat="{}{0:N2}s">
+                    <MultiBinding StringFormat="{}{0:N1} s">
                         <Binding Path="StateTransitionTime"/>
                     </MultiBinding>
                 </TextBox.Text>
             </TextBox>
         </Grid>
+
+        <!-- Debug Settings -->
+        <TextBlock Text="Debug Settings" Style="{StaticResource SectionHeaderStyle}"/>
+        <CheckBox Content="Enable Debug Logging" IsChecked="{Binding EnableDebugLogging}"
+                  Foreground="{StaticResource CForeground2}"
+                  ToolTip="Enable detailed state change logging for debugging"/>
+
     </core:SpacedStackPanel>
 </UserControl> 

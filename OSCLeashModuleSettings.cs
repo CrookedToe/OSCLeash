@@ -78,6 +78,17 @@ public class OSCLeashModuleSettings : StringModuleSetting
     [JsonProperty("curve_smoothing")]
     public Observable<float> CurveSmoothing { get; set; } = new(0.5f);
 
+    // Debug Settings
+    [JsonProperty("enable_debug_logging")]
+    public Observable<bool> EnableDebugLogging { get; set; } = new(false);
+
+    public static readonly string[] ValidCurveTypes = { "Linear", "Quadratic", "Cubic", "Exponential", "Smooth" };
+
+    public bool IsValidCurveType(string curveType)
+    {
+        return ValidCurveTypes.Contains(curveType, StringComparer.OrdinalIgnoreCase);
+    }
+
     public OSCLeashModuleSettings()
         : base("Settings", "Configure leash behavior", typeof(LeashModuleSettingView), "Settings")
     {

@@ -8,9 +8,13 @@ namespace VRCOSC.Modules.OSCLeash.UI;
 /// </summary>
 public partial class LeashModuleSettingView : UserControl
 {
-    public LeashModuleSettingView(OSCLeashModule _, OSCLeashModuleSettings settings)
+    public LeashModuleSettingView()
     {
         InitializeComponent();
+    }
+
+    public LeashModuleSettingView(OSCLeashModule _, OSCLeashModuleSettings settings) : this()
+    {
         DataContext = new LeashModuleSettingViewModel(settings);
     }
 } 

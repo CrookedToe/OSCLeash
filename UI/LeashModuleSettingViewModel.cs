@@ -188,6 +188,20 @@ public class LeashModuleSettingViewModel : INotifyPropertyChanged
         set => UpdateValue(_settings.StateTransitionTime, value, 0f, 1f);
     }
 
+    // Debug Settings
+    public bool EnableDebugLogging
+    {
+        get => _settings.EnableDebugLogging.Value;
+        set
+        {
+            if (_settings.EnableDebugLogging.Value != value)
+            {
+                _settings.EnableDebugLogging.Value = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     private void UpdateValue<T>(Observable<T> observable, T value, T min, T max) where T : IComparable<T>
     {
         if (value.CompareTo(min) < 0)

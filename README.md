@@ -136,6 +136,34 @@ The module processes physbone parameters in real-time:
 - **Incorrect Movement**: Check physbone constraints and contact setup
 - **Quest Compatibility**: Ensure physbone network IDs are synced between platforms
 
+## Understanding Log Messages
+
+### State Changes
+The module logs important state changes to help with troubleshooting:
+- `Leash grab state changed: [true/false]` - Indicates when the leash is grabbed or released
+- `Movement state changed: [Started/Stopped]` - Indicates when movement begins or ends
+- `Running state changed: [Started/Stopped]` - Indicates when running state changes
+- `Turning state changed: [Started/Stopped]` - Indicates when turning begins or ends
+
+### Warnings
+- `Walk deadzone value [X] is outside valid range [0,1]` - Walk deadzone setting needs adjustment
+- `Run deadzone value [X] is invalid` - Run deadzone must be greater than walk deadzone
+- `Strength multiplier [X] is outside valid range (0,2]` - Movement strength needs adjustment
+- `Invalid leash direction '[X]'` - Direction setting is not valid (use North/South/East/West)
+- `Parameter queue overflow` - Too many parameters being processed, some will be dropped
+
+### Errors
+- `Error updating parameter value: [message]` - Issue processing a parameter value
+- `Error during cache cleanup: [message]` - Issue cleaning up parameter cache
+- `Error sending movement values: [message]` - Issue sending movement to VRChat
+
+## Performance Optimization
+The module includes several features to maintain performance:
+- Force value deadzone (FORCE_EPSILON = 0.001) to prevent micro-movements
+- Parameter value caching with periodic cleanup
+- Batch processing of parameters (10 at a time)
+- Movement value clamping and validation
+
 ## Getting Help
 - Join the [Discord](https://discord.gg/vrcosc-1000862183963496519) for VRCOSC support
 - Create an [Issue](https://github.com/CrookedToe/OSCLeash/issues) for bug reports
