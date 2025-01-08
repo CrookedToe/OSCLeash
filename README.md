@@ -140,6 +140,6 @@ If you're updating from the original OSCLeash, you'll need to make these changes
 - **Wrong Direction**: Make sure the leash direction setting matches your setup
 
 ## Getting Help
-- Join the [Discord](https://discord.gg/vrcosc-1000862183963496519) for VRCOSC support
+- Join the [Discord](https://discord.com/invite/vj4brHyvT5) for VRCOSC support
 - Create an [Issue](https://github.com/CrookedToe/OSCLeash/issues) for bug reports
 - Check VRCOSC logs for any error messages- Enable debug logging for detailed state information
