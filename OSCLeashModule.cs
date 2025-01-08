@@ -14,10 +14,29 @@ public class OSCLeashModule : Module
     
     private Vector3 _positiveForces;
     private Vector3 _negativeForces;
+    private Vector3 _currentMovement;
+    private float _currentTurnAngle;
+    private float _lastUpdateTime;
     private bool _isGrabbed;
     private float _stretch;
     private string _currentBaseName;
     private string _currentDirection = "North";
+
+    // Helper function for smooth interpolation
+    private static float Lerp(float start, float end, float amount)
+    {
+        return start + (end - start) * amount;
+    }
+
+    private static Vector3 SmoothDamp(Vector3 current, Vector3 target, float smoothTime, float deltaTime)
+    {
+        smoothTime = Math.Max(0.0001f, smoothTime);
+        float omega = 2f / smoothTime;
+        float x = omega * deltaTime;
+        float exp = 1f / (1f + x + 0.48f * x * x + 0.235f * x * x * x);
+        
+        return Vector3.Lerp(current, target, 1f - exp);
+    }
 
     protected override void OnPreLoad()
     {
@@ -112,6 +131,10 @@ public class OSCLeashModule : Module
 
     private void UpdateMovement(OSCLeashModuleSettings settings)
     {
+        var currentTime = (float)DateTime.UtcNow.TimeOfDay.TotalSeconds;
+        var deltaTime = Math.Max(currentTime - _lastUpdateTime, 0.016f); // Cap at ~60fps
+        _lastUpdateTime = currentTime;
+
         var forces = (_positiveForces - _negativeForces) * _stretch * settings.StrengthMultiplier.Value;
         
         if (settings.EnableSafetyLimits.Value)
@@ -119,32 +142,38 @@ public class OSCLeashModule : Module
             forces = Vector3.Clamp(forces, new Vector3(-settings.MaxVelocity.Value), new Vector3(settings.MaxVelocity.Value));
         }
 
-        var strength = forces.Length();
+        // Smooth the movement
+        _currentMovement = SmoothDamp(_currentMovement, forces, settings.StateTransitionTime.Value, deltaTime);
+        
+        var strength = _currentMovement.Length();
         var isRunning = strength >= settings.RunDeadzone.Value;
         
         // Calculate turn amount if turning is enabled
-        var turnAmount = 0f;
+        var targetTurnAmount = 0f;
         if (settings.TurningEnabled.Value && strength >= settings.TurningDeadzone.Value)
         {
-            var angle = (float)Math.Atan2(forces.X, forces.Z);
-            turnAmount = angle * settings.TurningMultiplier.Value;
+            var angle = (float)Math.Atan2(_currentMovement.X, _currentMovement.Z);
+            targetTurnAmount = angle * settings.TurningMultiplier.Value;
             
             // Adjust turning based on direction
             switch (_currentDirection.ToLower())
             {
                 case "south":
-                    turnAmount = -turnAmount;
+                    targetTurnAmount = -targetTurnAmount;
                     break;
                 case "east":
-                    turnAmount = turnAmount - MathF.PI / 2;
+                    targetTurnAmount = targetTurnAmount - MathF.PI / 2;
                     break;
                 case "west":
-                    turnAmount = turnAmount + MathF.PI / 2;
+                    targetTurnAmount = targetTurnAmount + MathF.PI / 2;
                     break;
             }
         }
 
-        SendMovementValues(forces.X, forces.Z, turnAmount, isRunning);
+        // Smooth the turning
+        _currentTurnAngle = Lerp(_currentTurnAngle, targetTurnAmount, settings.SmoothTurningSpeed.Value * deltaTime);
+
+        SendMovementValues(_currentMovement.X, _currentMovement.Z, _currentTurnAngle, isRunning);
     }
 
     private void SendMovementValues(float horizontal, float vertical, float turn, bool isRunning)
@@ -182,6 +211,8 @@ public class OSCLeashModule : Module
     {
         _positiveForces = Vector3.Zero;
         _negativeForces = Vector3.Zero;
+        _currentMovement = Vector3.Zero;  // Reset smoothed movement
+        _currentTurnAngle = 0;            // Reset smoothed turning
         SendMovementValues(0, 0, 0, false);
     }
 
