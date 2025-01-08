@@ -83,13 +83,10 @@ If you're updating from the original OSCLeash, you'll need to make these changes
    - Remove the direction suffix and set the direction in VRCOSC settings instead
 
 # Features
-- Smooth, responsive movement control through physbone parameters
 - Configurable walking and running thresholds
 - Optional turning control with adjustable sensitivity
 - Safety limits for maximum velocity
-- Multiple leash support with direction-based control
 - Smooth movement transitions with deadzone handling
-- Rotation-aware movement (follows your facing direction)
 
 # Configuration
 
@@ -139,5 +136,4 @@ If you're updating from the original OSCLeash, you'll need to make these changes
 ## Getting Help
 - Join the [Discord](https://discord.gg/vrcosc-1000862183963496519) for VRCOSC support
 - Create an [Issue](https://github.com/CrookedToe/OSCLeash/issues) for bug reports
-- Check VRCOSC logs for any error messages
-- Enable debug logging for detailed state information
+- Check VRCOSC logs for any error messages- Enable debug logging for detailed state information

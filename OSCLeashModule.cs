@@ -14,13 +14,11 @@ public class OSCLeashModule : Module
     
     private Vector3 _positiveForces;
     private Vector3 _negativeForces;
-    private Vector3 _currentMovement;
     private float _currentTurnAngle;
     private float _lastUpdateTime;
-    private float _playerRotation;  // Track player rotation
     private bool _isGrabbed;
     private float _stretch;
-    private string _currentBaseName = string.Empty;  // Initialize to empty string
+    private string _currentBaseName = string.Empty;
     private string _currentDirection = "North";
 
     // Helper function for smooth interpolation
@@ -29,29 +27,19 @@ public class OSCLeashModule : Module
         return start + (end - start) * amount;
     }
 
-    private static Vector3 SmoothDamp(Vector3 current, Vector3 target, float smoothTime, float deltaTime)
-    {
-        smoothTime = Math.Max(0.0001f, smoothTime);
-        float omega = 2f / smoothTime;
-        float x = omega * deltaTime;
-        float exp = 1f / (1f + x + 0.48f * x * x + 0.235f * x * x * x);
-        
-        return Vector3.Lerp(current, target, 1f - exp);
-    }
-
     protected override void OnPreLoad()
     {
-            CreateCustomSetting(LeashSetting.Settings, new OSCLeashModuleSettings());
-            var settings = GetSetting<OSCLeashModuleSettings>(LeashSetting.Settings);
-            
+        CreateCustomSetting(LeashSetting.Settings, new OSCLeashModuleSettings());
+        var settings = GetSetting<OSCLeashModuleSettings>(LeashSetting.Settings);
+        
         // Validate base name
-            if (string.IsNullOrEmpty(settings.LeashVariable.Value))
+        if (string.IsNullOrEmpty(settings.LeashVariable.Value))
         {
             Log("Warning: Empty leash variable name, using 'Leash' as default");
             settings.LeashVariable.Value = "Leash";
         }
         
-        // Validate deadzones
+        // Validate movement settings
         if (settings.WalkDeadzone.Value < 0 || settings.WalkDeadzone.Value > 1)
         {
             Log($"Warning: Walk deadzone {settings.WalkDeadzone.Value} outside valid range [0,1], clamping");
@@ -64,36 +52,38 @@ public class OSCLeashModule : Module
             settings.RunDeadzone.Value = Math.Clamp(settings.RunDeadzone.Value, settings.WalkDeadzone.Value, 1);
         }
         
-        // Validate turning settings
-        if (settings.TurningMultiplier.Value < 0)
-        {
-            Log($"Warning: Negative turning multiplier {settings.TurningMultiplier.Value}, using absolute value");
-            settings.TurningMultiplier.Value = Math.Abs(settings.TurningMultiplier.Value);
-        }
-        
-        if (settings.TurningDeadzone.Value < 0 || settings.TurningDeadzone.Value > 1)
-        {
-            Log($"Warning: Turning deadzone {settings.TurningDeadzone.Value} outside valid range [0,1], clamping");
-            settings.TurningDeadzone.Value = Math.Clamp(settings.TurningDeadzone.Value, 0, 1);
-        }
-        
-        // Validate movement settings
-        if (settings.StateTransitionTime.Value < 0)
-        {
-            Log($"Warning: Negative transition time {settings.StateTransitionTime.Value}, using 0.2s");
-            settings.StateTransitionTime.Value = 0.2f;
-        }
-        
         if (settings.MaxVelocity.Value <= 0)
         {
             Log($"Warning: Invalid max velocity {settings.MaxVelocity.Value}, using 1.0");
             settings.MaxVelocity.Value = 1.0f;
         }
 
+        // Validate turning settings
+        if (settings.TurningEnabled.Value)
+        {
+            if (settings.TurningMultiplier.Value < 0)
+            {
+                Log($"Warning: Negative turning multiplier {settings.TurningMultiplier.Value}, using absolute value");
+                settings.TurningMultiplier.Value = Math.Abs(settings.TurningMultiplier.Value);
+            }
+            
+            if (settings.TurningDeadzone.Value < 0 || settings.TurningDeadzone.Value > 1)
+            {
+                Log($"Warning: Turning deadzone {settings.TurningDeadzone.Value} outside valid range [0,1], clamping");
+                settings.TurningDeadzone.Value = Math.Clamp(settings.TurningDeadzone.Value, 0, 1);
+            }
+
+            if (settings.SmoothTurningSpeed.Value < 0)
+            {
+                Log($"Warning: Negative smooth turning speed {settings.SmoothTurningSpeed.Value}, using absolute value");
+                settings.SmoothTurningSpeed.Value = Math.Abs(settings.SmoothTurningSpeed.Value);
+            }
+        }
+
         var fullBaseName = settings.LeashVariable.Value;
 
         // Check for direction suffix in the base name
-        var direction = "North"; // Default direction
+        var direction = settings.LeashDirection.Value; // Use current direction as default
         
         // Common direction suffixes
         if (fullBaseName.EndsWith("_North", StringComparison.OrdinalIgnoreCase))
@@ -173,37 +163,31 @@ public class OSCLeashModule : Module
                 break;
 
             case LeashParameter.Stretch:
-                var stretchValue = parameter.GetValue<float>();
-                _stretch = Math.Clamp(stretchValue, 0f, 1f);  // Clamp stretch to valid range
+                _stretch = Math.Clamp(parameter.GetValue<float>(), 0f, 1f);
                 break;
 
             case LeashParameter.ZPositive:
-                _positiveForces.Z = Math.Max(0f, parameter.GetValue<float>());  // Ensure positive
+                _positiveForces.Z = Math.Max(0f, parameter.GetValue<float>());
                 break;
 
             case LeashParameter.ZNegative:
-                _negativeForces.Z = Math.Max(0f, parameter.GetValue<float>());  // Ensure positive
+                _negativeForces.Z = Math.Max(0f, parameter.GetValue<float>());
                 break;
 
             case LeashParameter.XPositive:
-                _positiveForces.X = Math.Max(0f, parameter.GetValue<float>());  // Ensure positive
+                _positiveForces.X = Math.Max(0f, parameter.GetValue<float>());
                 break;
 
             case LeashParameter.XNegative:
-                _negativeForces.X = Math.Max(0f, parameter.GetValue<float>());  // Ensure positive
+                _negativeForces.X = Math.Max(0f, parameter.GetValue<float>());
                 break;
 
             case LeashParameter.YPositive:
-                _positiveForces.Y = Math.Max(0f, parameter.GetValue<float>());  // Ensure positive
+                _positiveForces.Y = Math.Max(0f, parameter.GetValue<float>());
                 break;
 
             case LeashParameter.YNegative:
-                _negativeForces.Y = Math.Max(0f, parameter.GetValue<float>());  // Ensure positive
-                break;
-
-            case LeashParameter.LookHorizontal:
-                // Update rotation and normalize to [-2π, 2π]
-                _playerRotation = (_playerRotation + parameter.GetValue<float>()) % (2 * MathF.PI);
+                _negativeForces.Y = Math.Max(0f, parameter.GetValue<float>());
                 break;
         }
 
@@ -216,7 +200,7 @@ public class OSCLeashModule : Module
     private void UpdateMovement(OSCLeashModuleSettings settings)
     {
         var currentTime = (float)DateTime.UtcNow.TimeOfDay.TotalSeconds;
-        var deltaTime = Math.Max(currentTime - _lastUpdateTime, 0.016f); // Cap at ~60fps
+        var deltaTime = Math.Max(currentTime - _lastUpdateTime, 0.016f);
         _lastUpdateTime = currentTime;
 
         // Calculate base movement values
@@ -224,144 +208,95 @@ public class OSCLeashModule : Module
         var verticalOutput = (_positiveForces.Z - _negativeForces.Z) * outputMultiplier;
         var horizontalOutput = (_positiveForces.X - _negativeForces.X) * outputMultiplier;
 
+        // Calculate movement strength
+        var baseStrength = MathF.Sqrt(verticalOutput * verticalOutput + horizontalOutput * horizontalOutput);
+
         // Apply safety limits if enabled
         if (settings.EnableSafetyLimits.Value)
         {
             verticalOutput = Math.Clamp(verticalOutput, -settings.MaxVelocity.Value, settings.MaxVelocity.Value);
             horizontalOutput = Math.Clamp(horizontalOutput, -settings.MaxVelocity.Value, settings.MaxVelocity.Value);
         }
-
-        // Calculate movement strength
-        var strength = MathF.Sqrt(verticalOutput * verticalOutput + horizontalOutput * horizontalOutput);
         
         // Check walk and run thresholds
-        if (strength < settings.WalkDeadzone.Value)
+        if (baseStrength < settings.WalkDeadzone.Value)
         {
             verticalOutput = 0;
             horizontalOutput = 0;
-            strength = 0;
+            baseStrength = 0;
         }
-        var isRunning = strength >= settings.RunDeadzone.Value;
+        var isRunning = baseStrength >= settings.RunDeadzone.Value;
 
-        // Calculate turning based on original logic
+        // Calculate turning if enabled
         var turningSpeed = 0f;
-        if (settings.TurningEnabled.Value && _stretch > settings.TurningDeadzone.Value)
+        if (settings.TurningEnabled.Value && baseStrength >= settings.TurningDeadzone.Value)
         {
             turningSpeed = settings.TurningMultiplier.Value;
             
             switch (_currentDirection.ToLower())
             {
                 case "north":
-                    if (_positiveForces.Z < settings.TurningGoal.Value)
+                    turningSpeed *= horizontalOutput;
+                    if (_positiveForces.X > _negativeForces.X)
                     {
-                        turningSpeed *= horizontalOutput;
-                        if (_positiveForces.X > _negativeForces.X)
-                        {
-                            // Right
-                            turningSpeed += _negativeForces.Z;
-                        }
-                        else
-                        {
-                            // Left
-                            turningSpeed -= _negativeForces.Z;
-                        }
+                        turningSpeed += _negativeForces.Z;
                     }
                     else
                     {
-                        turningSpeed = 0;
+                        turningSpeed -= _negativeForces.Z;
                     }
                     break;
 
                 case "south":
-                    if (_negativeForces.Z < settings.TurningGoal.Value)
+                    turningSpeed *= -horizontalOutput;
+                    if (_positiveForces.X > _negativeForces.X)
                     {
-                        turningSpeed *= -horizontalOutput;
-                        if (_positiveForces.X > _negativeForces.X)
-                        {
-                            // Left
-                            turningSpeed -= _positiveForces.Z;
-                        }
-                        else
-                        {
-                            // Right
-                            turningSpeed += _positiveForces.Z;
-                        }
+                        turningSpeed -= _positiveForces.Z;
                     }
                     else
                     {
-                        turningSpeed = 0;
+                        turningSpeed += _positiveForces.Z;
                     }
                     break;
 
                 case "east":
-                    if (_positiveForces.X < settings.TurningGoal.Value)
+                    turningSpeed *= verticalOutput;
+                    if (_positiveForces.Z > _negativeForces.Z)
                     {
-                        turningSpeed *= verticalOutput;
-                        if (_positiveForces.Z > _negativeForces.Z)
-                        {
-                            // Right
-                            turningSpeed += _negativeForces.X;
-                        }
-                        else
-                        {
-                            // Left
-                            turningSpeed -= _negativeForces.X;
-                        }
+                        turningSpeed += _negativeForces.X;
                     }
                     else
                     {
-                        turningSpeed = 0;
+                        turningSpeed -= _negativeForces.X;
                     }
                     break;
 
                 case "west":
-                    if (_negativeForces.X < settings.TurningGoal.Value)
+                    turningSpeed *= -verticalOutput;
+                    if (_positiveForces.Z > _negativeForces.Z)
                     {
-                        turningSpeed *= -verticalOutput;
-                        if (_positiveForces.Z > _negativeForces.Z)
-                        {
-                            // Left
-                            turningSpeed -= _positiveForces.X;
-                        }
-                        else
-                        {
-                            // Right
-                            turningSpeed += _positiveForces.X;
-                        }
+                        turningSpeed -= _positiveForces.X;
                     }
                     else
                     {
-                        turningSpeed = 0;
+                        turningSpeed += _positiveForces.X;
                     }
                     break;
             }
 
             turningSpeed = Math.Clamp(turningSpeed, -1f, 1f);
+            _currentTurnAngle = Lerp(_currentTurnAngle, turningSpeed, settings.SmoothTurningSpeed.Value * deltaTime);
         }
-
-        // Smooth the turning
-        _currentTurnAngle = Lerp(_currentTurnAngle, turningSpeed, settings.SmoothTurningSpeed.Value * deltaTime);
+        else
+        {
+            _currentTurnAngle = 0;
+        }
 
         // Apply deadzone to movement values
         if (Math.Abs(horizontalOutput) < MOVEMENT_EPSILON) horizontalOutput = 0;
         if (Math.Abs(verticalOutput) < MOVEMENT_EPSILON) verticalOutput = 0;
-        if (Math.Abs(_currentTurnAngle) < MOVEMENT_EPSILON) _currentTurnAngle = 0;
 
         SendMovementValues(horizontalOutput, verticalOutput, _currentTurnAngle, isRunning);
-    }
-
-    // Helper function to rotate a vector by an angle (in radians)
-    // Rotates around Y axis in VRChat's coordinate system (Z+ forward, X+ right)
-    private static Vector3 RotateVector(Vector3 vector, float angle)
-    {
-        var sin = MathF.Sin(angle);
-        var cos = MathF.Cos(angle);
-        
-        return new Vector3(
-            vector.Z * sin + vector.X * cos,  // Right movement (Horizontal)
-            vector.Y,                         // Up/down (unchanged)
-            vector.Z * cos - vector.X * sin   // Forward movement (Vertical)
-        );
     }
 
     private void SendMovementValues(float horizontal, float vertical, float turn, bool isRunning)
@@ -399,9 +334,7 @@ public class OSCLeashModule : Module
     {
         _positiveForces = Vector3.Zero;
         _negativeForces = Vector3.Zero;
-        _currentMovement = Vector3.Zero;
         _currentTurnAngle = 0;
-        _playerRotation = 0;  // Reset rotation tracking
         SendMovementValues(0, 0, 0, false);
     }
 

@@ -1,338 +1,89 @@
 <UserControl x:Class="VRCOSC.Modules.OSCLeash.UI.LeashModuleSettingView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:core="clr-namespace:VRCOSC.App.UI.Core;assembly=VRCOSC.App"
-             mc:Ignorable="d"
-             d:DesignHeight="800" d:DesignWidth="400"
-             x:Name="LeashSettingsView">
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      mc:Ignorable="d">
     
-    <UserControl.Resources>
-        <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource CForeground1}"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,15,0,5"/>
-        </Style>
-        
-        <Style x:Key="SettingLabelStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource CForeground2}"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-        
-        <Style x:Key="SettingSliderStyle" TargetType="Slider">
-            <Setter Property="Width" Value="200"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="IsSnapToTickEnabled" Value="True"/>
-            <Setter Property="TickFrequency" Value="0.05"/>
-        </Style>
-        
-        <Style x:Key="ValueBoxStyle" TargetType="TextBox">
-            <Setter Property="Width" Value="50"/>
-            <Setter Property="Margin" Value="5,0,0,0"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-    </UserControl.Resources>
-
-    <core:SpacedStackPanel Spacing="5" Margin="15">
-        <!-- Leash Configuration -->
-        <TextBlock Text="Leash Configuration" Style="{StaticResource SectionHeaderStyle}"/>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Variable Name" Style="{StaticResource SettingLabelStyle}"
-                      ToolTip="The base name for all leash parameters"/>
-            <TextBox Grid.Column="1" Width="150" Text="{Binding LeashVariable, UpdateSourceTrigger=PropertyChanged}"/>
-        </Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Leash Direction" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="The direction the leash faces relative to the avatar"/>
-            <ComboBox Grid.Column="1" Width="150" 
-                     ItemsSource="{Binding DirectionOptions}"
-                     SelectedItem="{Binding LeashDirection}"/>
-        </Grid>
-
-        <!-- Safety Settings -->
-        <TextBlock Text="Safety Settings" Style="{StaticResource SectionHeaderStyle}"/>
-        <CheckBox Content="Enable Safety Limits" IsChecked="{Binding EnableSafetyLimits}"
-                  Foreground="{StaticResource CForeground2}"
-                  ToolTip="Enable limits on movement speed and acceleration"/>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Maximum Velocity" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="Maximum movement speed (0-2)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="2" Value="{Binding MaxVelocity}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}"
-                    Text="{Binding MaxVelocity, StringFormat=N2}"/>
-        </Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Maximum Acceleration" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="Maximum rate of speed change (0-5)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="5" Value="{Binding MaxAcceleration}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}"
-                    Text="{Binding MaxAcceleration, StringFormat=N2}"/>
-        </Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Maximum Turn Rate" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="Maximum turning speed in degrees/second (0-360)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="360" Value="{Binding MaxTurnRate}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}">
-                <TextBox.Text>
-                    <MultiBinding StringFormat="{}{0:N0}°/s">
-                        <Binding Path="MaxTurnRate"/>
-                    </MultiBinding>
-                </TextBox.Text>
-            </TextBox>
-        </Grid>
+    <StackPanel Margin="10">
+        <!-- Core Settings -->
+        <GroupBox Header="Core Settings" Margin="0,0,0,10" Foreground="{DynamicResource CForeground1}">
+            <StackPanel Margin="5">
+                <Label Content="Leash Variable Name" Foreground="{DynamicResource CForeground2}"/>
+                <TextBox Text="{Binding LeashVariable, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Base name for leash parameters (e.g., 'Leash' or 'Leash_North')"
+                         Foreground="{DynamicResource CForeground1}"/>
+                
+                <Label Content="Leash Direction" Foreground="{DynamicResource CForeground2}"/>
+                <ComboBox ItemsSource="{Binding DirectionOptions}"
+                          SelectedItem="{Binding LeashDirection}"
+                          ToolTip="Direction the leash faces relative to avatar"
+                          Foreground="Black"/>
+            </StackPanel>
+        </GroupBox>
 
         <!-- Movement Settings -->
-        <TextBlock Text="Movement Settings" Style="{StaticResource SectionHeaderStyle}"/>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Walk Deadzone" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="Minimum stretch required to start walking (0-100%)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="1" Value="{Binding WalkDeadzone}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}"
-                    Text="{Binding WalkDeadzone, StringFormat=P0}"/>
-        </Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Run Deadzone" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="Minimum stretch required to start running (0-100%)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="1" Value="{Binding RunDeadzone}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}"
-                    Text="{Binding RunDeadzone, StringFormat=P0}"/>
-        </Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Strength Multiplier" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="Overall movement speed multiplier (0-200%)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="2" Value="{Binding StrengthMultiplier}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}"
-                    Text="{Binding StrengthMultiplier, StringFormat=P0}"/>
-        </Grid>
+        <GroupBox Header="Movement Settings" Margin="0,0,0,10" Foreground="{DynamicResource CForeground1}">
+            <StackPanel Margin="5">
+                <Label Content="Walk Deadzone" Foreground="{DynamicResource CForeground2}"/>
+                <Slider Value="{Binding WalkDeadzone}"
+                        Minimum="0" Maximum="1" 
+                        ToolTip="Minimum stretch required to start walking (0-1)"
+                        IsSnapToTickEnabled="True" TickFrequency="0.05"/>
+                
+                <Label Content="Run Deadzone" Foreground="{DynamicResource CForeground2}"/>
+                <Slider Value="{Binding RunDeadzone}"
+                        Minimum="0" Maximum="1"
+                        ToolTip="Minimum stretch required to start running (0-1)"
+                        IsSnapToTickEnabled="True" TickFrequency="0.05"/>
+                
+                <Label Content="Strength Multiplier" Foreground="{DynamicResource CForeground2}"/>
+                <Slider Value="{Binding StrengthMultiplier}"
+                        Minimum="0" Maximum="2"
+                        ToolTip="Multiplier for movement speed"
+                        IsSnapToTickEnabled="True" TickFrequency="0.1"/>
+                
+                <CheckBox Content="Enable Safety Limits" 
+                          IsChecked="{Binding EnableSafetyLimits}"
+                          Margin="0,5"
+                          ToolTip="Limit maximum movement speed"
+                          Foreground="{DynamicResource CForeground2}"/>
+                
+                <Label Content="Max Velocity" Foreground="{DynamicResource CForeground2}"/>
+                <Slider Value="{Binding MaxVelocity}"
+                        Minimum="0" Maximum="2"
+                        ToolTip="Maximum movement speed when safety limits are enabled"
+                        IsSnapToTickEnabled="True" TickFrequency="0.1"/>
+            </StackPanel>
+        </GroupBox>
 
         <!-- Turning Settings -->
-        <TextBlock Text="Turning Settings" Style="{StaticResource SectionHeaderStyle}"/>
-        <CheckBox Content="Enable Turning" IsChecked="{Binding TurningEnabled}"
-                  Foreground="{StaticResource CForeground2}"
-                  ToolTip="Enable turning control through leash movement"/>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Turning Multiplier" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="Turning speed multiplier (0-200%)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="2" Value="{Binding TurningMultiplier}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}"
-                    Text="{Binding TurningMultiplier, StringFormat=P0}"/>
-        </Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Turning Deadzone" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="Minimum stretch required to start turning (0-100%)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="1" Value="{Binding TurningDeadzone}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}"
-                    Text="{Binding TurningDeadzone, StringFormat=P0}"/>
-        </Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Turning Goal" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="Maximum turning angle in degrees (0-180°)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="180" Value="{Binding TurningGoal}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}">
-                <TextBox.Text>
-                    <MultiBinding StringFormat="{}{0:N0}°">
-                        <Binding Path="TurningGoal"/>
-                    </MultiBinding>
-                </TextBox.Text>
-            </TextBox>
-        </Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Smooth Turning Speed" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="How quickly turning reaches its target (0-100%)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="1" Value="{Binding SmoothTurningSpeed}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}"
-                    Text="{Binding SmoothTurningSpeed, StringFormat=P0}"/>
-        </Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Turning Momentum" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="How much momentum affects turning (0-100%)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="1" Value="{Binding TurningMomentum}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}"
-                    Text="{Binding TurningMomentum, StringFormat=P0}"/>
-        </Grid>
-
-        <!-- Vertical Movement Settings -->
-        <TextBlock Text="Vertical Movement Settings" Style="{StaticResource SectionHeaderStyle}"/>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Up/Down Compensation" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="How much vertical movement affects speed (0-200%)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="2" Value="{Binding UpDownCompensation}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}"
-                    Text="{Binding UpDownCompensation, StringFormat=P0}"/>
-        </Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Up/Down Deadzone" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="Minimum vertical stretch to affect movement (0-100%)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="1" Value="{Binding UpDownDeadzone}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}"
-                    Text="{Binding UpDownDeadzone, StringFormat=P0}"/>
-        </Grid>
-
-        <!-- Movement Enhancements -->
-        <TextBlock Text="Movement Enhancements" Style="{StaticResource SectionHeaderStyle}"/>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Movement Curve Type" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="How movement strength is calculated"/>
-            <ComboBox Grid.Column="1" Width="150"
-                     ItemsSource="{Binding CurveTypeOptions}"
-                     SelectedItem="{Binding MovementCurveType}"/>
-        </Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Curve Exponent" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="Power of exponential curve (1-5)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="1" Maximum="5" Value="{Binding CurveExponent}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}"
-                    Text="{Binding CurveExponent, StringFormat=N1}"/>
-        </Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Curve Smoothing" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="How much to smooth the movement curve (0-100%)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="1" Value="{Binding CurveSmoothing}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}"
-                    Text="{Binding CurveSmoothing, StringFormat=P0}"/>
-        </Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="Interpolation Strength" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="How smoothly movement changes (0-100%)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="1" Value="{Binding InterpolationStrength}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}"
-                    Text="{Binding InterpolationStrength, StringFormat=P0}"/>
-        </Grid>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="State Transition Time" Style="{StaticResource SettingLabelStyle}"
-                     ToolTip="Time to transition between states in seconds (0-2s)"/>
-            <Slider Grid.Column="1" Style="{StaticResource SettingSliderStyle}"
-                   Minimum="0" Maximum="2" Value="{Binding StateTransitionTime}"/>
-            <TextBox Grid.Column="2" Style="{StaticResource ValueBoxStyle}">
-                <TextBox.Text>
-                    <MultiBinding StringFormat="{}{0:N1} s">
-                        <Binding Path="StateTransitionTime"/>
-                    </MultiBinding>
-                </TextBox.Text>
-            </TextBox>
-        </Grid>
-
-        <!-- Debug Settings -->
-        <TextBlock Text="Debug Settings" Style="{StaticResource SectionHeaderStyle}"/>
-        <CheckBox Content="Enable Debug Logging" IsChecked="{Binding EnableDebugLogging}"
-                  Foreground="{StaticResource CForeground2}"
-                  ToolTip="Enable detailed state change logging for debugging"/>
-
-    </core:SpacedStackPanel>
+        <GroupBox Header="Turning Settings" Margin="0,0,0,10" Foreground="{DynamicResource CForeground1}">
+            <StackPanel Margin="5">
+                <CheckBox Content="Enable Turning" 
+                          IsChecked="{Binding TurningEnabled}"
+                          Margin="0,5"
+                          ToolTip="Allow the leash to control turning"
+                          Foreground="{DynamicResource CForeground2}"/>
+                
+                <Label Content="Turning Multiplier" Foreground="{DynamicResource CForeground2}"/>
+                <Slider Value="{Binding TurningMultiplier}"
+                        Minimum="0" Maximum="2"
+                        ToolTip="Multiplier for turning speed"
+                        IsSnapToTickEnabled="True" TickFrequency="0.1"/>
+                
+                <Label Content="Turning Deadzone" Foreground="{DynamicResource CForeground2}"/>
+                <Slider Value="{Binding TurningDeadzone}"
+                        Minimum="0" Maximum="1"
+                        ToolTip="Minimum stretch required to start turning (0-1)"
+                        IsSnapToTickEnabled="True" TickFrequency="0.05"/>
+                
+                <Label Content="Smooth Turning Speed" Foreground="{DynamicResource CForeground2}"/>
+                <Slider Value="{Binding SmoothTurningSpeed}"
+                        Minimum="0" Maximum="2"
+                        ToolTip="Speed of turn angle interpolation"
+                        IsSnapToTickEnabled="True" TickFrequency="0.1"/>
+            </StackPanel>
+        </GroupBox>
+    </StackPanel>
 </UserControl> 
