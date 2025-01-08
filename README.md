@@ -1,5 +1,7 @@
 # OSCLeash
 
+> ⚠️ **WARNING**: This project is currently a Work In Progress. Features may be incomplete, unstable, or subject to significant changes. Use at your own risk and please report any issues you encounter.
+
 <div align="center">
     <h3>
         A VRChat OSC module for VRCOSC that enables avatar movement control through physbone parameters.<br>
@@ -9,6 +11,9 @@
         <a href="https://github.com/CrookedToe/OSCLeash/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/ZenithVal/OSCLeash?label=License"></a>
     </p>
 </div>
+
+This is a VRCOSC module port of [ZenithVal's OSCLeash](https://github.com/ZenithVal/OSCLeash), rewritten in C# to work within VRCOSC's module system. While the core functionality remains the same*, this version integrates directly with VRCOSC for a more streamlined experience. For detailed information about the original implementation, advanced features, and troubleshooting, please visit the original repository.
+
 
 # Quick Start Guide
 
@@ -87,6 +92,7 @@ If you're updating from the original OSCLeash, you'll need to make these changes
 - Optional turning control with adjustable sensitivity
 - Safety limits for maximum velocity
 - Smooth movement transitions with deadzone handling
+
 
 # Configuration
 
