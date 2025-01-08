@@ -69,11 +69,13 @@ For direction-based leashes, append the direction to the base name:
 - Configurable walking and running thresholds with deadzone control
 - Optional turning control with adjustable sensitivity and momentum
 - Up/down movement compensation with configurable limits
+- Safety limits for maximum velocity, acceleration, and turn rate
 - SIMD-optimized calculations for efficient performance
 - Thread-safe parameter handling with concurrent queue system
 - Multiple leash support with direction-based control
 - Movement curve customization with multiple curve types
 - State interpolation for smooth transitions
+- Toggleable debug logging for troubleshooting
 
 # Configuration
 
@@ -83,6 +85,15 @@ For direction-based leashes, append the direction to the base name:
 | Walk Deadzone | Minimum stretch % to start walking | 0.15 |
 | Run Deadzone | Minimum stretch % to trigger running | 0.70 |
 | Strength Multiplier | Movement speed multiplier (capped at 1.0) | 1.2 |
+| Enable Debug Logging | Toggle detailed state change logging | false |
+
+## Safety Settings
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Enable Safety Limits | Enable movement speed and acceleration limits | true |
+| Max Velocity | Maximum movement speed in any direction | 1.0 |
+| Max Acceleration | Maximum speed change per second | 2.0 |
+| Max Turn Rate | Maximum turning speed in degrees per second | 180 |
 
 ## Turning Settings
 | Setting | Description | Default |
@@ -91,12 +102,23 @@ For direction-based leashes, append the direction to the base name:
 | Turning Multiplier | Adjusts turning speed | 0.80 |
 | Turning Deadzone | Minimum stretch % to start turning | 0.15 |
 | Turning Goal | Target turning angle range (0-144°) | 90 |
+| Turning Momentum | Momentum factor for smooth turning | 0.5 |
+| Smooth Turning Speed | Speed of turn angle interpolation | 1.0 |
 
 ## Vertical Movement Settings
 | Setting | Description | Default |
 |---------|-------------|---------|
 | Up/Down Compensation | Compensation % for vertical angles | 1.0 |
 | Up/Down Deadzone | Vertical angle movement threshold | 0.5 |
+
+## Movement Curve Settings
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Movement Curve Type | Type of movement response curve | Linear |
+| Curve Exponent | Power factor for exponential curves | 2.0 |
+| Curve Smoothing | Smoothing factor for curve transitions | 0.5 |
+| Interpolation Strength | Strength of state interpolation | 0.8 |
+| State Transition Time | Time for state transitions in seconds | 0.2 |
 
 # Advanced Features
 
@@ -110,24 +132,14 @@ The module supports different movement curve types:
 - `Linear` - Direct mapping (default)
 - `Quadratic` - Smooth acceleration curve
 - `Cubic` - More aggressive acceleration
-- `Exponential` - Customizable power curve
+- `Exponential` - Customizable power curve with exponent control
+- `Smooth` - Smoothed curve with adjustable transition factor
 
-## Technical Details
-The module processes physbone parameters in real-time:
-
-1. **Parameter Monitoring**
-   - Tracks `_IsGrabbed` and `_Stretch` states
-   - Processes directional parameters for movement calculation
-
-2. **Movement Processing**
-   - Uses SIMD operations for efficient vector calculations
-   - Applies configurable deadzones and multipliers
-   - Handles smooth transitions and momentum
-
-3. **Direction Control**
-   - Supports multiple orientations (North, South, East, West)
-   - Adjusts turning behavior based on leash direction
-   - Provides smooth turning with momentum
+The curve behavior can be further customized using:
+- `Curve Exponent`: Controls the power factor for exponential curves
+- `Curve Smoothing`: Adjusts the smoothness of curve transitions
+- `Interpolation Strength`: Controls how quickly values interpolate
+- `State Transition Time`: Sets the duration of state changes
 
 # Troubleshooting
 
@@ -135,15 +147,16 @@ The module processes physbone parameters in real-time:
 - **No Movement Response**: Verify OSC is enabled in VRChat and VRCOSC is running
 - **Incorrect Movement**: Check physbone constraints and contact setup
 - **Quest Compatibility**: Ensure physbone network IDs are synced between platforms
+- **Jerky Movement**: Try adjusting safety limits or increasing state transition time
 
 ## Understanding Log Messages
 
-### State Changes
-The module logs important state changes to help with troubleshooting:
+### State Changes (When Debug Logging Enabled)
 - `Leash grab state changed: [true/false]` - Indicates when the leash is grabbed or released
 - `Movement state changed: [Started/Stopped]` - Indicates when movement begins or ends
 - `Running state changed: [Started/Stopped]` - Indicates when running state changes
 - `Turning state changed: [Started/Stopped]` - Indicates when turning begins or ends
+- `Parameter cache cleanup: [count] values removed` - Indicates cache maintenance
 
 ### Warnings
 - `Walk deadzone value [X] is outside valid range [0,1]` - Walk deadzone setting needs adjustment
@@ -151,6 +164,7 @@ The module logs important state changes to help with troubleshooting:
 - `Strength multiplier [X] is outside valid range (0,2]` - Movement strength needs adjustment
 - `Invalid leash direction '[X]'` - Direction setting is not valid (use North/South/East/West)
 - `Parameter queue overflow` - Too many parameters being processed, some will be dropped
+- `Invalid movement curve type '[X]'` - Curve type setting is not valid
 
 ### Errors
 - `Error updating parameter value: [message]` - Issue processing a parameter value
@@ -160,11 +174,13 @@ The module logs important state changes to help with troubleshooting:
 ## Performance Optimization
 The module includes several features to maintain performance:
 - Force value deadzone (FORCE_EPSILON = 0.001) to prevent micro-movements
-- Parameter value caching with periodic cleanup
+- Parameter value caching with periodic cleanup (every 1000 updates)
 - Batch processing of parameters (10 at a time)
 - Movement value clamping and validation
+- Safety limits to prevent excessive calculations
 
 ## Getting Help
 - Join the [Discord](https://discord.gg/vrcosc-1000862183963496519) for VRCOSC support
 - Create an [Issue](https://github.com/CrookedToe/OSCLeash/issues) for bug reports
 - Check VRCOSC logs for any error messages
+- Enable debug logging for detailed state information
