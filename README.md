@@ -19,11 +19,11 @@
 - VRChat with OSC enabled
 
 ## Known Issues
-- Parameter names containing '+' are not received by the module. In the Unity prefab, rename:
+- Parameter names containing '+' are not received by the module due to an upstream SDK limitation. In your Unity parameters, rename:
   - `X+` to `XPositive`
   - `Y+` to `YPositive`
   - `Z+` to `ZPositive`
-  This is a temporary workaround until the parameter handling is fixed.
+  This is required until the VRCOSC SDK parameter handling is updated.
 
 ## Installation Steps
 
@@ -56,21 +56,40 @@ The module uses the following parameter naming convention:
 | Directional (Up) | `{name}_YPositive` | `Leash_YPositive` |
 | Directional (Down) | `{name}_Y-` | `Leash_Y-` |
 
-For direction-based leashes, append the direction to the base name:
-- `Leash_North` - Front-facing leash
-- `Leash_South` - Back-facing leash
-- `Leash_East` - Right-facing leash
-- `Leash_West` - Left-facing leash
+For direction-based leashes, you can either:
+1. Set the direction in the module settings:
+   - `North` - Front-facing leash (default)
+   - `South` - Back-facing leash
+   - `East` - Right-facing leash
+   - `West` - Left-facing leash
+
+2. Or append the direction to your base parameter name:
+   - `Leash_North` - Front-facing leash
+   - `Leash_South` - Back-facing leash
+   - `Leash_East` - Right-facing leash
+   - `Leash_West` - Left-facing leash
+   The module will automatically detect the direction and update the settings.
+
+### 4. Porting from Original OSCLeash
+If you're updating from the original OSCLeash, you'll need to make these changes in Unity:
+1. In your Contact Receivers, rename the parameters:
+   - `Z+` to `ZPositive`
+   - `X+` to `XPositive`
+   - `Y+` to `YPositive`
+2. Keep the negative direction parameters as is (`Z-`, `X-`, `Y-`)
+3. Update your animator parameters to match the new naming
+4. For direction-specific leashes, you can either:
+   - Keep your existing parameter names with direction suffixes (e.g., `Leash_North`)
+   - Remove the direction suffix and set the direction in VRCOSC settings instead
 
 # Features
 - Smooth, responsive movement control through physbone parameters
-- Configurable walking and running thresholds with deadzone control
+- Configurable walking and running thresholds
 - Optional turning control with adjustable sensitivity
-- Up/down movement compensation with configurable limits
 - Safety limits for maximum velocity
 - Multiple leash support with direction-based control
-- Smooth movement transitions
-- Toggleable debug logging for troubleshooting
+- Smooth movement transitions with deadzone handling
+- Rotation-aware movement (follows your facing direction)
 
 # Configuration
 
@@ -79,7 +98,7 @@ For direction-based leashes, append the direction to the base name:
 |---------|-------------|---------|
 | Walk Deadzone | Minimum stretch % to start walking | 0.15 |
 | Run Deadzone | Minimum stretch % to trigger running | 0.70 |
-| Strength Multiplier | Movement speed multiplier (capped at 1.0) | 1.2 |
+| Strength Multiplier | Movement speed multiplier | 1.2 |
 | Enable Debug Logging | Toggle detailed state change logging | false |
 
 ## Safety Settings
@@ -114,12 +133,8 @@ For direction-based leashes, append the direction to the base name:
 - **No Movement Response**: Verify OSC is enabled in VRChat and VRCOSC is running
 - **Incorrect Movement**: Check physbone constraints and contact setup
 - **Quest Compatibility**: Ensure physbone network IDs are synced between platforms
-- **Jerky Movement**: Try increasing state transition time
-
-## Understanding Log Messages
-
-### State Changes (When Debug Logging Enabled)
-- `Error sending movement values: [message]` - Issue sending movement to VRChat
+- **Jerky Movement**: Try increasing state transition time or check your frame rate
+- **Wrong Direction**: Make sure the leash direction setting matches your setup
 
 ## Getting Help
 - Join the [Discord](https://discord.gg/vrcosc-1000862183963496519) for VRCOSC support
