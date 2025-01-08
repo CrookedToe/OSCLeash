@@ -79,7 +79,7 @@ public class OSCLeashModuleSettings : StringModuleSetting
     public Observable<float> CurveSmoothing { get; set; } = new(0.5f);
 
     public OSCLeashModuleSettings()
-        : base("Settings", "Configure leash behavior", typeof(LeashModuleSettingView), string.Empty)
+        : base("Settings", "Configure leash behavior", typeof(LeashModuleSettingView), "Settings")
     {
     }
 } 

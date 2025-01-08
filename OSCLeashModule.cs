@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using VRCOSC.App.SDK.Modules;
+using VRCOSC.App.SDK.Modules.Attributes;
 using VRCOSC.App.SDK.Parameters;
 using VRCOSC.App.SDK.VRChat;
 using VRCOSC.Modules.OSCLeash.Constants;
@@ -14,6 +15,7 @@ namespace VRCOSC.Modules.OSCLeash;
 [ModuleTitle("OSC Leash")]
 [ModuleDescription("Allows for controlling avatar movement with parameters")]
 [ModuleType(ModuleType.Generic)]
+[ModulePrefab("OSCLeash", "https://github.com/CrookedToe/OSCLeash/tree/main/Unity")]
 public class OSCLeashModule : Module, IAsyncDisposable
 {
     private readonly ReaderWriterLockSlim _parameterLock = new();
@@ -477,28 +479,27 @@ public class OSCLeashModule : Module, IAsyncDisposable
 
     protected override async Task OnModuleStop()
     {
-        await DisposeAsync();
-        await base.OnModuleStop();
+        if (!_isDisposed)
+        {
+            await new ValueTask(Task.Run(() => DisposeAsync())).ConfigureAwait(false);
+        }
+        await base.OnModuleStop().ConfigureAwait(false);
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        if (_isDisposed) return;
+        if (_isDisposed) return ValueTask.CompletedTask;
 
         try
         {
-            if (_parameterLock != null)
-            {
-                _parameterLock.Dispose();
-            }
-
             _isDisposed = true;
+            _parameterLock?.Dispose();
         }
         catch (Exception e)
         {
-            Log($"Error during async disposal: {e.Message}");
+            Log($"Error during disposal: {e.Message}");
         }
 
-        await ValueTask.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 } 

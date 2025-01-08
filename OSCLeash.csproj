@@ -11,6 +11,7 @@
     <SupportedOSPlatform>windows10.0.22621.0</SupportedOSPlatform>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <EnableDefaultPageItems>false</EnableDefaultPageItems>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,6 +26,16 @@
     <Page Remove="VRCOSC-Modules\**" />
     <EmbeddedResource Remove="Leashcode\**" />
     <EmbeddedResource Remove="VRCOSC-Modules\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="UI\LeashModuleSettingView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Update="UI\LeashModuleSettingView.xaml.cs">
+      <DependentUpon>LeashModuleSettingView.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
