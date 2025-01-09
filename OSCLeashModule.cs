@@ -1,8 +1,5 @@
-using System;
-using System.Threading.Tasks;
 using VRCOSC.App.SDK.Modules;
 using VRCOSC.App.SDK.Parameters;
-using System.Threading;
 
 namespace VRCOSC.Modules.OSCLeash;
 
