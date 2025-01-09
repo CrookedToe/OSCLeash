@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using VRCOSC.App.SDK.Modules;
 using VRCOSC.App.SDK.Parameters;
+using System.Threading;
 
 namespace VRCOSC.Modules.OSCLeash;
 
@@ -20,7 +21,10 @@ public class OSCLeashModule : Module
     private float xNegative;
     private float yPositive;
     private float yNegative;
-    private float leashDirection;
+    private int leashDirection;
+
+    private bool isRunning;
+    private CancellationTokenSource? movementCts;
 
     private const string PARAM_PREFIX = "avatar/parameters/";
     private const string INPUT_PREFIX = "input/";
@@ -73,7 +77,7 @@ public class OSCLeashModule : Module
         // Register parameters we want to receive
         RegisterParameter<float>(OSCLeashParameter.Stretch, $"{PARAM_PREFIX}Leash_Stretch", ParameterMode.Read, "Leash Stretch", "Physbone stretch value", false);
         RegisterParameter<bool>(OSCLeashParameter.IsGrabbed, $"{PARAM_PREFIX}Leash_IsGrabbed", ParameterMode.Read, "Leash Grabbed", "Physbone grab state", false);
-        RegisterParameter<float>(OSCLeashParameter.LeashDirection, $"{PARAM_PREFIX}Leash_Direction", ParameterMode.Read, "Leash Direction", "Direction of the leash (0=North, 1=South, 2=East, 3=West)", false);
+        RegisterParameter<int>(OSCLeashParameter.LeashDirection, $"{PARAM_PREFIX}Leash_Direction", ParameterMode.Read, "Leash Direction", "Direction of the leash (0=North, 1=South, 2=East, 3=West)", false);
         
         // Direction parameters
         RegisterParameter<float>(OSCLeashParameter.ZPositive, $"{PARAM_PREFIX}Leash_ZPositive", ParameterMode.Read, "Forward Direction", "Forward movement value", false);
@@ -83,16 +87,7 @@ public class OSCLeashModule : Module
         RegisterParameter<float>(OSCLeashParameter.YPositive, $"{PARAM_PREFIX}Leash_YPositive", ParameterMode.Read, "Up Direction", "Upward movement value", false);
         RegisterParameter<float>(OSCLeashParameter.YNegative, $"{PARAM_PREFIX}Leash_YNegative", ParameterMode.Read, "Down Direction", "Downward movement value", false);
 
-        // Register output parameters
-        RegisterParameter<float>(OSCLeashParameter.Vertical, $"{INPUT_PREFIX}Vertical", ParameterMode.Write, "Vertical Movement", "Forward/backward movement (-1 to 1)", false);
-        RegisterParameter<float>(OSCLeashParameter.Horizontal, $"{INPUT_PREFIX}Horizontal", ParameterMode.Write, "Horizontal Movement", "Left/right movement (-1 to 1)", false);
-        RegisterParameter<int>(OSCLeashParameter.Run, $"{INPUT_PREFIX}Run", ParameterMode.Write, "Run State", "Whether to run (1) or walk (0)", false);
-
-        // Create settings groups
-        CreateGroup("Movement", OSCLeashSetting.RunDeadzone, OSCLeashSetting.WalkDeadzone, OSCLeashSetting.StrengthMultiplier);
-        CreateGroup("Up/Down", OSCLeashSetting.UpDownCompensation, OSCLeashSetting.UpDownDeadzone);
-        CreateGroup("Turning", OSCLeashSetting.TurningEnabled, OSCLeashSetting.TurningMultiplier, OSCLeashSetting.TurningDeadzone, OSCLeashSetting.TurningGoal);
-    }
+           }
 
     protected override void OnRegisteredParameterReceived(RegisteredParameter parameter)
     {
@@ -100,43 +95,53 @@ public class OSCLeashModule : Module
         {
             case OSCLeashParameter.Stretch:
                 stretch = parameter.GetValue<float>();
-                Log($"Stretch: {stretch}");
                 break;
             case OSCLeashParameter.IsGrabbed:
                 var newGrabState = parameter.GetValue<bool>();
-                Log($"Grab state changed: {isGrabbed} -> {newGrabState}");
+                LogDebug($"Grab state changed: {isGrabbed} -> {newGrabState}");
                 isGrabbed = newGrabState;
                 break;
             case OSCLeashParameter.LeashDirection:
-                leashDirection = parameter.GetValue<float>();
-                Log($"Leash direction: {leashDirection}");
+                var direction = (int)parameter.GetValue<float>();
+                if (direction >= 0 && direction <= 3)
+                {
+                    leashDirection = direction;
+                    LogDebug($"Leash direction set to: {GetDirectionName(leashDirection)}");
+                }
+                else
+                {
+                    LogDebug($"Invalid leash direction received: {direction}. Must be 0-3.");
+                }
                 break;
             case OSCLeashParameter.ZPositive:
                 zPositive = parameter.GetValue<float>();
-                Log($"Z+: {zPositive}");
                 break;
             case OSCLeashParameter.ZNegative:
                 zNegative = parameter.GetValue<float>();
-                Log($"Z-: {zNegative}");
                 break;
             case OSCLeashParameter.XPositive:
                 xPositive = parameter.GetValue<float>();
-                Log($"X+: {xPositive}");
                 break;
             case OSCLeashParameter.XNegative:
                 xNegative = parameter.GetValue<float>();
-                Log($"X-: {xNegative}");
                 break;
             case OSCLeashParameter.YPositive:
                 yPositive = parameter.GetValue<float>();
-                Log($"Y+: {yPositive}");
                 break;
             case OSCLeashParameter.YNegative:
                 yNegative = parameter.GetValue<float>();
-                Log($"Y-: {yNegative}");
                 break;
         }
     }
+
+    private static string GetDirectionName(int direction) => direction switch
+    {
+        0 => "North",
+        1 => "South",
+        2 => "East",
+        3 => "West",
+        _ => "Unknown"
+    };
 
     [ModuleUpdate(ModuleUpdateMode.Custom, true, 20)] // 50Hz update rate
     private void UpdateMovement()
@@ -147,8 +152,14 @@ public class OSCLeashModule : Module
             return;
         }
 
+        // Cancel any pending movement updates
+        movementCts?.Cancel();
+        movementCts = new CancellationTokenSource();
+        var token = movementCts.Token;
+
         if (!isGrabbed)
         {
+            isRunning = false;
             player.StopRun();
             player.MoveVertical(0);
             player.MoveHorizontal(0);
@@ -193,9 +204,9 @@ public class OSCLeashModule : Module
         if (turningEnabled && stretch > GetSettingValue<float>(OSCLeashSetting.TurningDeadzone))
         {
             var turningMultiplier = GetSettingValue<float>(OSCLeashSetting.TurningMultiplier);
-            var turningGoal = GetSettingValue<float>(OSCLeashSetting.TurningGoal) / 180f; // Convert to 0-1 range
+            var turningGoal = Math.Max(0f, GetSettingValue<float>(OSCLeashSetting.TurningGoal)) / 180f; // Ensure positive
 
-            switch ((int)leashDirection)
+            switch (leashDirection)
             {
                 case 0: // North
                     if (zPositive < turningGoal)
@@ -243,19 +254,26 @@ public class OSCLeashModule : Module
 
         // Apply movement based on stretch
         var runDeadzone = GetSettingValue<float>(OSCLeashSetting.RunDeadzone);
-        var isRunning = stretch > runDeadzone;
+        isRunning = stretch > runDeadzone;
 
         // Send run state first to ensure it's applied before movement
         if (isRunning)
         {
             player.Run();
             // Send movement after a small delay to ensure run state is applied
-            Task.Delay(16).ContinueWith(_ =>
+            Task.Delay(16, token).ContinueWith(t =>
             {
-                player.MoveVertical(verticalOutput);
-                player.MoveHorizontal(horizontalOutput);
-                player.LookHorizontal(turningOutput);
-            });
+                if (t.IsCanceled || token.IsCancellationRequested)
+                    return;
+
+                var currentPlayer = GetPlayer();
+                if (currentPlayer != null)
+                {
+                    currentPlayer.MoveVertical(verticalOutput);
+                    currentPlayer.MoveHorizontal(horizontalOutput);
+                    currentPlayer.LookHorizontal(turningOutput);
+                }
+            }, token);
         }
         else
         {
@@ -271,7 +289,11 @@ public class OSCLeashModule : Module
             Math.Abs(lastTurning - turningOutput) > 0.1f || 
             lastRunning != isRunning)
         {
-            Log($"Movement - H: {horizontalOutput:F2} V: {verticalOutput:F2} T: {turningOutput:F2} Run: {isRunning}");
+            if (lastRunning != isRunning)
+            {
+                LogDebug($"Run state changed: {(isRunning ? "Running" : "Walking")}");
+            }
+
             lastVertical = verticalOutput;
             lastHorizontal = horizontalOutput;
             lastTurning = turningOutput;
@@ -292,13 +314,34 @@ public class OSCLeashModule : Module
     protected override Task<bool> OnModuleStart()
     {
         Log("OSCLeash module started");
+        movementCts = new CancellationTokenSource();
+        
         var player = GetPlayer();
         if (player != null)
         {
             player.StopRun();
             player.MoveVertical(0);
             player.MoveHorizontal(0);
+            player.LookHorizontal(0);
         }
         return Task.FromResult(true);
+    }
+
+    protected override Task OnModuleStop()
+    {
+        movementCts?.Cancel();
+        movementCts?.Dispose();
+        movementCts = null;
+
+        var player = GetPlayer();
+        if (player != null)
+        {
+            player.StopRun();
+            player.MoveVertical(0);
+            player.MoveHorizontal(0);
+            player.LookHorizontal(0);
+        }
+
+        return Task.CompletedTask;
     }
 } 
