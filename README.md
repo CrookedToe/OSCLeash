@@ -1,6 +1,5 @@
 # OSCLeash
 
-
 <div align="center">
     <h3>
         A VRChat OSC module for VRCOSC that enables avatar movement control through physbone parameters.<br>
@@ -20,7 +19,7 @@ This is a VRCOSC module port of [ZenithVal's OSCLeash](https://github.com/Zenith
 ## Requirements
 - [VRCOSC](https://github.com/VolcanicArts/VRCOSC)
 - .NET 8.0 Runtime
-- Windows 10/11 (Build 22621 or later)
+- Windows 10/11
 - VRChat with OSC enabled
 
 ## Known Issues
@@ -55,89 +54,57 @@ The module uses the following parameter naming convention:
 | Grabbed State | `{name}_IsGrabbed` | `Leash_IsGrabbed` |
 | Stretch Value | `{name}_Stretch` | `Leash_Stretch` |
 | Directional (Front) | `{name}_ZPositive` | `Leash_ZPositive` |
-| Directional (Back) | `{name}_Z-` | `Leash_Z-` |
+| Directional (Back) | `{name}_ZNegative` | `Leash_ZNegative` |
 | Directional (Right) | `{name}_XPositive` | `Leash_XPositive` |
-| Directional (Left) | `{name}_X-` | `Leash_X-` |
+| Directional (Left) | `{name}_XNegative` | `Leash_XNegative` |
 | Directional (Up) | `{name}_YPositive` | `Leash_YPositive` |
-| Directional (Down) | `{name}_Y-` | `Leash_Y-` |
+| Directional (Down) | `{name}_YNegative` | `Leash_YNegative` |
 
-For direction-based leashes, you can either:
-1. Set the direction in the module settings:
-   - `North` - Front-facing leash (default)
-   - `South` - Back-facing leash
-   - `East` - Right-facing leash
-   - `West` - Left-facing leash
-
-2. Or append the direction to your base parameter name:
-   - `Leash_North` - Front-facing leash
-   - `Leash_South` - Back-facing leash
-   - `Leash_East` - Right-facing leash
-   - `Leash_West` - Left-facing leash
-   The module will automatically detect the direction and update the settings.
-
-### 4. Porting from Original OSCLeash
-If you're updating from the original OSCLeash, you'll need to make these changes in Unity:
-1. In your Contact Receivers, rename the parameters:
-   - `Z+` to `ZPositive`
-   - `X+` to `XPositive`
-   - `Y+` to `YPositive`
-2. Keep the negative direction parameters as is (`Z-`, `X-`, `Y-`)
-3. Update your animator parameters to match the new naming
-4. For direction-specific leashes, you can either:
-   - Keep your existing parameter names with direction suffixes (e.g., `Leash_North`)
-   - Remove the direction suffix and set the direction in VRCOSC settings instead
-
-# Features
-- Configurable walking and running thresholds
-- Optional turning control with adjustable sensitivity
-- Safety limits for maximum velocity
-- Smooth movement transitions with deadzone handling
-
+The leash direction is set in the module settings:
+- `North` - Front-facing leash (default)
+- `South` - Back-facing leash
+- `East` - Right-facing leash
+- `West` - Left-facing leash
 
 # Configuration
 
 ## Basic Settings
 | Setting | Description | Default |
 |---------|-------------|---------|
-| Walk Deadzone | Minimum stretch % to start walking | 0.15 |
-| Run Deadzone | Minimum stretch % to trigger running | 0.70 |
+| Leash Name | Base name for your leash parameters | "Leash" |
+| Leash Direction | Direction the leash faces | North |
+| Walk Deadzone | Minimum stretch for walking | 0.15 |
+| Run Deadzone | Minimum stretch for running | 0.70 |
 | Strength Multiplier | Movement speed multiplier | 1.2 |
-| Enable Debug Logging | Toggle detailed state change logging | false |
 
-## Safety Settings
+## Up/Down Control Settings
 | Setting | Description | Default |
 |---------|-------------|---------|
-| Enable Safety Limits | Enable movement speed limits | true |
-| Max Velocity | Maximum movement speed in any direction | 1.0 |
+| Up/Down Compensation | Compensation for vertical movement | 1.0 |
+| Up/Down Deadzone | Vertical angle deadzone | 0.5 |
 
 ## Turning Settings
 | Setting | Description | Default |
 |---------|-------------|---------|
-| Turning Enabled | Enables turning functionality | false |
-| Turning Multiplier | Adjusts turning speed | 0.80 |
-| Turning Deadzone | Minimum stretch % to start turning | 0.15 |
-| Smooth Turning Speed | Speed of turn angle interpolation | 1.0 |
-
-## Movement Settings
-| Setting | Description | Default |
-|---------|-------------|---------|
-| State Transition Time | Time for movement transitions in seconds | 0.2 |
-
-# Advanced Features
-
-## Optional Setup
-- For Quest/PC cross-platform support: Sync the Physbone's network ID
-- For multiple leashes: Add additional sources to `Compass` and `Aim Needle`, animate weights based on grab state
-- For remote users: Animate compass visibility using IsLocal
+| Turning Enabled | Enable turning control | false |
+| Turning Multiplier | Turning speed multiplier | 0.80 |
+| Turning Deadzone | Minimum stretch for turning | 0.15 |
+| Turning Goal | Maximum turning angle in degrees | 90° |
 
 # Troubleshooting
 
 ## Common Issues
-- **No Movement Response**: Verify OSC is enabled in VRChat and VRCOSC is running
-- **Incorrect Movement**: Check physbone constraints and contact setup
-- **Quest Compatibility**: Ensure physbone network IDs are synced between platforms
-- **Jerky Movement**: Try increasing state transition time or check your frame rate
-- **Wrong Direction**: Make sure the leash direction setting matches your setup
+- **No Movement Response**: 
+  - Verify OSC is enabled in VRChat
+  - Check that VRCOSC is running
+  - Verify parameter names match exactly (including case)
+  - Check that the leash name in settings matches your parameter prefix
+- **Incorrect Movement**: 
+  - Check physbone constraints and contact setup
+  - Verify the leash direction setting matches your setup
+- **No Turning**: 
+  - Check that turning is enabled in settings
+  - Verify the leash direction is set correctly
 
 ## Getting Help
 - Join the [Discord](https://discord.com/invite/vj4brHyvT5) for VRCOSC support
