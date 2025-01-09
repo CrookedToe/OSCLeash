@@ -11,7 +11,7 @@ riderModule.iml
 /.idea
 *.user
 .vs/
-Leashcode/
+LeashPython/
 VRCOSC-Modules/
 VRCOSC/
 OSCLeash.sln
