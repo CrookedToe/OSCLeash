@@ -48,7 +48,6 @@ public class OSCLeashModule : Module
 
     private enum OSCLeashSetting
     {
-        LeashName,
         LeashDirection,
         RunDeadzone,
         WalkDeadzone,
@@ -64,7 +63,6 @@ public class OSCLeashModule : Module
     protected override void OnPreLoad()
     {
         // Create settings
-        CreateTextBox(OSCLeashSetting.LeashName, "Leash Name", "Base name for your leash parameters (e.g. 'Leash')", "Leash");
         CreateDropdown(OSCLeashSetting.LeashDirection, "Leash Direction", "Direction the leash faces", LeashDirection.North);
         
         CreateSlider(OSCLeashSetting.RunDeadzone, "Run Deadzone", "Stretch threshold for running", 0.70f, 0.0f, 1.0f);
@@ -79,20 +77,17 @@ public class OSCLeashModule : Module
         CreateSlider(OSCLeashSetting.TurningDeadzone, "Turning Deadzone", "Minimum stretch required for turning", 0.15f, 0.0f, 1.0f);
         CreateSlider(OSCLeashSetting.TurningGoal, "Turning Goal", "Maximum turning angle in degrees", 90f, 0.0f, 180.0f);
 
-        // Register parameters
-        var leashName = GetSettingValue<string>(OSCLeashSetting.LeashName);
-        
         // Register physbone state parameters
-        RegisterParameter<bool>(OSCLeashParameter.IsGrabbed, $"{leashName}_IsGrabbed", ParameterMode.Read, "Leash Grabbed", "Physbone grab state");
-        RegisterParameter<float>(OSCLeashParameter.Stretch, $"{leashName}_Stretch", ParameterMode.Read, "Leash Stretch", "Physbone stretch value");
+        RegisterParameter<bool>(OSCLeashParameter.IsGrabbed, "Leash_IsGrabbed", ParameterMode.Read, "Leash Grabbed", "Physbone grab state");
+        RegisterParameter<float>(OSCLeashParameter.Stretch, "Leash_Stretch", ParameterMode.Read, "Leash Stretch", "Physbone stretch value");
         
         // Direction parameters
-        RegisterParameter<float>(OSCLeashParameter.ZPositive, $"{leashName}_ZPositive", ParameterMode.Read, "Forward Direction", "Forward movement value", false);
-        RegisterParameter<float>(OSCLeashParameter.ZNegative, $"{leashName}_ZNegative", ParameterMode.Read, "Backward Direction", "Backward movement value", false);
-        RegisterParameter<float>(OSCLeashParameter.XPositive, $"{leashName}_XPositive", ParameterMode.Read, "Right Direction", "Right movement value", false);
-        RegisterParameter<float>(OSCLeashParameter.XNegative, $"{leashName}_XNegative", ParameterMode.Read, "Left Direction", "Left movement value", false);
-        RegisterParameter<float>(OSCLeashParameter.YPositive, $"{leashName}_YPositive", ParameterMode.Read, "Up Direction", "Upward movement value", false);
-        RegisterParameter<float>(OSCLeashParameter.YNegative, $"{leashName}_YNegative", ParameterMode.Read, "Down Direction", "Downward movement value", false);
+        RegisterParameter<float>(OSCLeashParameter.ZPositive, "Leash_ZPositive", ParameterMode.Read, "Forward Direction", "Forward movement value", false);
+        RegisterParameter<float>(OSCLeashParameter.ZNegative, "Leash_ZNegative", ParameterMode.Read, "Backward Direction", "Backward movement value", false);
+        RegisterParameter<float>(OSCLeashParameter.XPositive, "Leash_XPositive", ParameterMode.Read, "Right Direction", "Right movement value", false);
+        RegisterParameter<float>(OSCLeashParameter.XNegative, "Leash_XNegative", ParameterMode.Read, "Left Direction", "Left movement value", false);
+        RegisterParameter<float>(OSCLeashParameter.YPositive, "Leash_YPositive", ParameterMode.Read, "Up Direction", "Upward movement value", false);
+        RegisterParameter<float>(OSCLeashParameter.YNegative, "Leash_YNegative", ParameterMode.Read, "Down Direction", "Downward movement value", false);
     }
 
     protected override void OnRegisteredParameterReceived(RegisteredParameter parameter)

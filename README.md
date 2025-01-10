@@ -33,7 +33,7 @@ This is a VRCOSC module port of [ZenithVal's OSCLeash](https://github.com/Zenith
 
 ### 1. Module Setup
 1. Download the latest release from the releases page
-2. Place the DLL in your VRCOSC packages folder (typically `%AppData%/VRCOSC/Packages`)
+2. Place the DLL in your VRCOSC packages folder (typically `%AppData%/VRCOSC/Packages/local`)
 3. Enable the module in VRCOSC
 4. Configure the module settings in VRCOSC's UI
 
@@ -46,19 +46,18 @@ This is a VRCOSC module port of [ZenithVal's OSCLeash](https://github.com/Zenith
    - Select `Aim Needle` (child of Compass) and assign the Aim constraint source to the last bone
 
 ### 3. Parameter Setup
-The module uses the following parameter naming convention:
+The module requires the following parameters to be set up in your avatar:
 
-| Parameter | Format | Example |
-|-----------|---------|---------|
-| Base Parameter | `{name}` | `Leash` |
-| Grabbed State | `{name}_IsGrabbed` | `Leash_IsGrabbed` |
-| Stretch Value | `{name}_Stretch` | `Leash_Stretch` |
-| Directional (Front) | `{name}_ZPositive` | `Leash_ZPositive` |
-| Directional (Back) | `{name}_ZNegative` | `Leash_ZNegative` |
-| Directional (Right) | `{name}_XPositive` | `Leash_XPositive` |
-| Directional (Left) | `{name}_XNegative` | `Leash_XNegative` |
-| Directional (Up) | `{name}_YPositive` | `Leash_YPositive` |
-| Directional (Down) | `{name}_YNegative` | `Leash_YNegative` |
+| Parameter | Description |
+|-----------|-------------|
+| `Leash_IsGrabbed` | Physbone grab state |
+| `Leash_Stretch` | Physbone stretch value |
+| `Leash_ZPositive` | Forward movement value |
+| `Leash_ZNegative` | Backward movement value |
+| `Leash_XPositive` | Right movement value |
+| `Leash_XNegative` | Left movement value |
+| `Leash_YPositive` | Up movement value |
+| `Leash_YNegative` | Down movement value |
 
 The leash direction is set in the module settings:
 - `North` - Front-facing leash (default)
@@ -71,7 +70,6 @@ The leash direction is set in the module settings:
 ## Basic Settings
 | Setting | Description | Default |
 |---------|-------------|---------|
-| Leash Name | Base name for your leash parameters | "Leash" |
 | Leash Direction | Direction the leash faces | North |
 | Walk Deadzone | Minimum stretch for walking | 0.15 |
 | Run Deadzone | Minimum stretch for running | 0.70 |

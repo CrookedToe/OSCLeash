@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.1 - 2025-01-10
+
+### Fixed
+- Fixed installation instructions
+
+### Removed
+- Removed setting for leash name, opting for direct parameter configuration
+
 ## [0.2.0] - 2024-01-09
 
 ### Fixed
