@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - decreased update rate to 30hz
 
-## Added
+### Added
 - Added motion smoothing
 
 ## [0.2.1] - 2025-01-10
