@@ -1,8 +1,19 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.2.2] - 2025-01-13
 
-## 0.2.1 - 2025-01-10
+### Fixed
+- Fixed state not properly cleaning up
+- Fixed resource managment
+
+### Changed
+- decreased update rate to 30hz
+
+## Added
+- Added motion smoothing
+
+## [0.2.1] - 2025-01-10
 
 ### Fixed
 - Fixed installation instructions

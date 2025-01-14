@@ -1,5 +1,6 @@
 using VRCOSC.App.SDK.Modules;
 using VRCOSC.App.SDK.Parameters;
+using VRCOSC.App.SDK.VRChat;
 
 namespace VRCOSC.Modules.OSCLeash;
 
@@ -19,7 +20,17 @@ public class OSCLeashModule : Module
     private float yPositive;
     private float yNegative;
 
-    private bool isRunning;
+    // Cache previous values for delta updates
+    private float lastVerticalOutput;
+    private float lastHorizontalOutput;
+    private float lastTurningOutput;
+    private bool lastRunState;
+    
+    // Input smoothing
+    private readonly Queue<float> verticalSmoothingBuffer = new(4);
+    private readonly Queue<float> horizontalSmoothingBuffer = new(4);
+    private const int SmoothingBufferSize = 4;
+
     private CancellationTokenSource? movementCts;
 
     private enum LeashDirection
@@ -121,169 +132,207 @@ public class OSCLeashModule : Module
         }
     }
 
-    [ModuleUpdate(ModuleUpdateMode.Custom, true, 20)] // 50Hz update rate
+    private float SmoothValue(Queue<float> buffer, float newValue)
+    {
+        buffer.Enqueue(newValue);
+        if (buffer.Count > SmoothingBufferSize)
+            buffer.Dequeue();
+        
+        return buffer.Count > 0 ? buffer.Average() : newValue;
+    }
+
+    [ModuleUpdate(ModuleUpdateMode.Custom, true, 33)] // Reduced to ~30Hz
     private void UpdateMovement()
     {
-        var player = GetPlayer();
-        if (player == null)
+        try
         {
-            return;
-        }
-
-        // Cancel any pending movement updates
-        movementCts?.Cancel();
-        movementCts = new CancellationTokenSource();
-        var token = movementCts.Token;
-
-        if (!isGrabbed)
-        {
-            player.StopRun();
-            player.MoveVertical(0);
-            player.MoveHorizontal(0);
-            player.LookHorizontal(0);
-            return;
-        }
-
-        // Movement Math - match Python implementation
-        var strengthMultiplier = GetSettingValue<float>(OSCLeashSetting.StrengthMultiplier);
-        var outputMultiplier = stretch * strengthMultiplier;
-        var verticalOutput = Clamp((zPositive - zNegative) * outputMultiplier);
-        var horizontalOutput = Clamp((xPositive - xNegative) * outputMultiplier);
-
-        // Up/Down compensation
-        var yCombined = yPositive + yNegative;
-        var upDownDeadzone = GetSettingValue<float>(OSCLeashSetting.UpDownDeadzone);
-
-        // Up/Down Deadzone, stops movement if pulled too high or low
-        if (yCombined >= upDownDeadzone)
-        {
-            player.StopRun();
-            player.MoveVertical(0);
-            player.MoveHorizontal(0);
-            player.LookHorizontal(0);
-            return;
-        }
-
-        // Up/Down Compensation
-        var upDownCompensation = GetSettingValue<float>(OSCLeashSetting.UpDownCompensation);
-        if (upDownCompensation != 0)
-        {
-            var yModifier = Clamp(1.0f - (yCombined * upDownCompensation));
-            if (yModifier != 0.0f)
+            var player = GetPlayer();
+            if (player == null)
             {
-                verticalOutput /= yModifier;
-                horizontalOutput /= yModifier;
+                return;
             }
-        }
 
-        // Turning calculation
-        float turningOutput = 0f;
-        var turningEnabled = GetSettingValue<bool>(OSCLeashSetting.TurningEnabled);
-        if (turningEnabled && stretch > GetSettingValue<float>(OSCLeashSetting.TurningDeadzone))
-        {
-            var turningMultiplier = GetSettingValue<float>(OSCLeashSetting.TurningMultiplier);
-            var turningGoal = Math.Max(0f, GetSettingValue<float>(OSCLeashSetting.TurningGoal)) / 180f; // Ensure positive
-            var direction = GetSettingValue<LeashDirection>(OSCLeashSetting.LeashDirection);
-
-            switch (direction)
+            // Only create new CTS if needed
+            if (movementCts == null || movementCts.IsCancellationRequested)
             {
-                case LeashDirection.North: // North
-                    if (zPositive < turningGoal)
-                    {
-                        turningOutput = horizontalOutput * turningMultiplier;
-                        if (xPositive > xNegative)
-                            turningOutput += zNegative; // Right
-                        else
-                            turningOutput -= zNegative; // Left
-                    }
-                    break;
-                case LeashDirection.South: // South
-                    if (zNegative < turningGoal)
-                    {
-                        turningOutput = -horizontalOutput * turningMultiplier;
-                        if (xPositive > xNegative)
-                            turningOutput -= zPositive; // Left
-                        else
-                            turningOutput += zPositive; // Right
-                    }
-                    break;
-                case LeashDirection.East: // East
-                    if (xPositive < turningGoal)
-                    {
-                        turningOutput = verticalOutput * turningMultiplier;
-                        if (zPositive > zNegative)
-                            turningOutput += xNegative; // Right
-                        else
-                            turningOutput -= xNegative; // Left
-                    }
-                    break;
-                case LeashDirection.West: // West
-                    if (xNegative < turningGoal)
-                    {
-                        turningOutput = -verticalOutput * turningMultiplier;
-                        if (zPositive > zNegative)
-                            turningOutput -= xPositive; // Left
-                        else
-                            turningOutput += xPositive; // Right
-                    }
-                    break;
+                movementCts?.Dispose();
+                movementCts = new CancellationTokenSource();
             }
-            turningOutput = Clamp(turningOutput);
-        }
 
-        // Apply movement based on stretch
-        var runDeadzone = GetSettingValue<float>(OSCLeashSetting.RunDeadzone);
-        isRunning = stretch > runDeadzone;
-
-        // Send run state first to ensure it's applied before movement
-        if (isRunning)
-        {
-            player.Run();
-            // Send movement after a small delay to ensure run state is applied
-            Task.Delay(16, token).ContinueWith(t =>
+            if (!isGrabbed)
             {
-                if (t.IsCanceled || token.IsCancellationRequested)
-                    return;
-
-                var currentPlayer = GetPlayer();
-                if (currentPlayer != null)
+                if (lastRunState || lastVerticalOutput != 0 || lastHorizontalOutput != 0 || lastTurningOutput != 0)
                 {
-                    currentPlayer.MoveVertical(verticalOutput);
-                    currentPlayer.MoveHorizontal(horizontalOutput);
-                    currentPlayer.LookHorizontal(turningOutput);
+                    ResetMovement(player);
                 }
-            }, token);
-        }
-        else
-        {
-            player.StopRun();
-            player.MoveVertical(verticalOutput);
-            player.MoveHorizontal(horizontalOutput);
-            player.LookHorizontal(turningOutput);
-        }
-
-        // Only log when values change significantly
-        if (Math.Abs(lastVertical - verticalOutput) > 0.1f || 
-            Math.Abs(lastHorizontal - horizontalOutput) > 0.1f || 
-            Math.Abs(lastTurning - turningOutput) > 0.1f || 
-            lastRunning != isRunning)
-        {
-            if (lastRunning != isRunning)
-            {
-                LogDebug($"Run state changed: {(isRunning ? "Running" : "Walking")}");
+                return;
             }
 
-            lastVertical = verticalOutput;
-            lastHorizontal = horizontalOutput;
-            lastTurning = turningOutput;
-            lastRunning = isRunning;
+            // Movement calculations with smoothing
+            var strengthMultiplier = GetSettingValue<float>(OSCLeashSetting.StrengthMultiplier);
+            var outputMultiplier = stretch * strengthMultiplier;
+            
+            var rawVerticalOutput = Clamp((zPositive - zNegative) * outputMultiplier);
+            var rawHorizontalOutput = Clamp((xPositive - xNegative) * outputMultiplier);
+
+            var verticalOutput = SmoothValue(verticalSmoothingBuffer, rawVerticalOutput);
+            var horizontalOutput = SmoothValue(horizontalSmoothingBuffer, rawHorizontalOutput);
+
+            // Up/Down compensation
+            var yCombined = yPositive + yNegative;
+            var upDownDeadzone = GetSettingValue<float>(OSCLeashSetting.UpDownDeadzone);
+
+            if (yCombined >= upDownDeadzone)
+            {
+                if (lastRunState || lastVerticalOutput != 0 || lastHorizontalOutput != 0 || lastTurningOutput != 0)
+                {
+                    ResetMovement(player);
+                }
+                return;
+            }
+
+            // Up/Down Compensation
+            var upDownCompensation = GetSettingValue<float>(OSCLeashSetting.UpDownCompensation);
+            if (upDownCompensation != 0)
+            {
+                var yModifier = Clamp(1.0f - (yCombined * upDownCompensation));
+                if (yModifier != 0.0f)
+                {
+                    verticalOutput /= yModifier;
+                    horizontalOutput /= yModifier;
+                }
+            }
+
+            // Turning calculation
+            var turningOutput = CalculateTurningOutput();
+
+            // Apply movement based on stretch with delta updates
+            var runDeadzone = GetSettingValue<float>(OSCLeashSetting.RunDeadzone);
+            var newRunState = stretch > runDeadzone;
+
+            // Only update states that have changed
+            if (newRunState != lastRunState)
+            {
+                if (newRunState)
+                    player.Run();
+                else
+                    player.StopRun();
+                lastRunState = newRunState;
+            }
+
+            // Apply movement only when values have changed significantly
+            const float updateThreshold = 0.01f;
+            
+            if (Math.Abs(verticalOutput - lastVerticalOutput) > updateThreshold)
+            {
+                player.MoveVertical(verticalOutput);
+                lastVerticalOutput = verticalOutput;
+            }
+            
+            if (Math.Abs(horizontalOutput - lastHorizontalOutput) > updateThreshold)
+            {
+                player.MoveHorizontal(horizontalOutput);
+                lastHorizontalOutput = horizontalOutput;
+            }
+            
+            if (Math.Abs(turningOutput - lastTurningOutput) > updateThreshold)
+            {
+                player.LookHorizontal(turningOutput);
+                lastTurningOutput = turningOutput;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"Error in UpdateMovement: {ex.Message}");
+            try
+            {
+                var player = GetPlayer();
+                if (player != null)
+                {
+                    ResetMovement(player);
+                }
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
         }
     }
 
-    private float lastVertical;
-    private float lastHorizontal;
-    private float lastTurning;
-    private bool lastRunning;
+    private void ResetMovement(Player player)
+    {
+        player.StopRun();
+        player.MoveVertical(0);
+        player.MoveHorizontal(0);
+        player.LookHorizontal(0);
+        
+        lastRunState = false;
+        lastVerticalOutput = 0;
+        lastHorizontalOutput = 0;
+        lastTurningOutput = 0;
+        
+        verticalSmoothingBuffer.Clear();
+        horizontalSmoothingBuffer.Clear();
+    }
+
+    private float CalculateTurningOutput()
+    {
+        var turningEnabled = GetSettingValue<bool>(OSCLeashSetting.TurningEnabled);
+        if (!turningEnabled || stretch <= GetSettingValue<float>(OSCLeashSetting.TurningDeadzone))
+            return 0f;
+
+        var turningMultiplier = GetSettingValue<float>(OSCLeashSetting.TurningMultiplier);
+        var turningGoal = Math.Max(0f, GetSettingValue<float>(OSCLeashSetting.TurningGoal)) / 180f;
+        var direction = GetSettingValue<LeashDirection>(OSCLeashSetting.LeashDirection);
+        var horizontalOutput = Clamp((xPositive - xNegative) * stretch * GetSettingValue<float>(OSCLeashSetting.StrengthMultiplier));
+        var verticalOutput = Clamp((zPositive - zNegative) * stretch * GetSettingValue<float>(OSCLeashSetting.StrengthMultiplier));
+
+        float turningOutput = 0f;
+        switch (direction)
+        {
+            case LeashDirection.North:
+                if (zPositive < turningGoal)
+                {
+                    turningOutput = horizontalOutput * turningMultiplier;
+                    if (xPositive > xNegative)
+                        turningOutput += zNegative;
+                    else
+                        turningOutput -= zNegative;
+                }
+                break;
+            case LeashDirection.South:
+                if (zNegative < turningGoal)
+                {
+                    turningOutput = -horizontalOutput * turningMultiplier;
+                    if (xPositive > xNegative)
+                        turningOutput -= zPositive;
+                    else
+                        turningOutput += zPositive;
+                }
+                break;
+            case LeashDirection.East:
+                if (xPositive < turningGoal)
+                {
+                    turningOutput = verticalOutput * turningMultiplier;
+                    if (zPositive > zNegative)
+                        turningOutput += xNegative;
+                    else
+                        turningOutput -= xNegative;
+                }
+                break;
+            case LeashDirection.West:
+                if (xNegative < turningGoal)
+                {
+                    turningOutput = -verticalOutput * turningMultiplier;
+                    if (zPositive > zNegative)
+                        turningOutput -= xPositive;
+                    else
+                        turningOutput += xPositive;
+                }
+                break;
+        }
+        return Clamp(turningOutput);
+    }
 
     private static float Clamp(float value)
     {
