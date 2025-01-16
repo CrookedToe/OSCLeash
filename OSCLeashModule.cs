@@ -1,6 +1,7 @@
 using VRCOSC.App.SDK.Modules;
 using VRCOSC.App.SDK.Parameters;
 using VRCOSC.App.SDK.VRChat;
+using System.Diagnostics;
 
 namespace VRCOSC.Modules.OSCLeash;
 
@@ -26,10 +27,21 @@ public class OSCLeashModule : Module
     private float lastTurningOutput;
     private bool lastRunState;
     
-    // Input smoothing
-    private readonly Queue<float> verticalSmoothingBuffer = new(4);
-    private readonly Queue<float> horizontalSmoothingBuffer = new(4);
-    private const int SmoothingBufferSize = 4;
+    // Input smoothing with larger buffer for more stability
+    private readonly Queue<float> verticalSmoothingBuffer = new(8);
+    private readonly Queue<float> horizontalSmoothingBuffer = new(8);
+    private const int SmoothingBufferSize = 8;
+
+    // Frame skipping for performance
+    private int frameCounter;
+    private const int FrameSkip = 1; // Process every other frame
+    
+    // Batch update threshold
+    private const float UpdateThreshold = 0.025f; // Increased threshold for less frequent updates
+    
+    // Performance monitoring
+    private readonly Stopwatch updateTimer = new();
+    private const int PerformanceThresholdMs = 5; // Target update time
 
     private CancellationTokenSource? movementCts;
 
@@ -138,21 +150,36 @@ public class OSCLeashModule : Module
         if (buffer.Count > SmoothingBufferSize)
             buffer.Dequeue();
         
-        return buffer.Count > 0 ? buffer.Average() : newValue;
+        // Weighted average - recent values have more influence
+        float sum = 0;
+        float weight = 1;
+        float totalWeight = 0;
+        
+        foreach (var value in buffer.Reverse())
+        {
+            sum += value * weight;
+            totalWeight += weight;
+            weight *= 0.8f; // Exponential decay
+        }
+        
+        return sum / totalWeight;
     }
 
-    [ModuleUpdate(ModuleUpdateMode.Custom, true, 33)] // Reduced to ~30Hz
+    [ModuleUpdate(ModuleUpdateMode.Custom, true, 33)]
     private void UpdateMovement()
     {
+        // Frame skipping for performance
+        if (frameCounter++ % (FrameSkip + 1) != 0)
+            return;
+
+        updateTimer.Restart();
+        
         try
         {
             var player = GetPlayer();
             if (player == null)
-            {
                 return;
-            }
 
-            // Only create new CTS if needed
             if (movementCts == null || movementCts.IsCancellationRequested)
             {
                 movementCts?.Dispose();
@@ -162,84 +189,54 @@ public class OSCLeashModule : Module
             if (!isGrabbed)
             {
                 if (lastRunState || lastVerticalOutput != 0 || lastHorizontalOutput != 0 || lastTurningOutput != 0)
-                {
                     ResetMovement(player);
-                }
                 return;
             }
 
-            // Movement calculations with smoothing
-            var strengthMultiplier = GetSettingValue<float>(OSCLeashSetting.StrengthMultiplier);
-            var outputMultiplier = stretch * strengthMultiplier;
-            
-            var rawVerticalOutput = Clamp((zPositive - zNegative) * outputMultiplier);
-            var rawHorizontalOutput = Clamp((xPositive - xNegative) * outputMultiplier);
+            // Batch all movement calculations
+            var (verticalOutput, horizontalOutput, turningOutput, shouldRun) = CalculateMovement();
 
-            var verticalOutput = SmoothValue(verticalSmoothingBuffer, rawVerticalOutput);
-            var horizontalOutput = SmoothValue(horizontalSmoothingBuffer, rawHorizontalOutput);
+            // Check if any significant changes before applying updates
+            bool hasSignificantChanges = 
+                Math.Abs(verticalOutput - lastVerticalOutput) > UpdateThreshold ||
+                Math.Abs(horizontalOutput - lastHorizontalOutput) > UpdateThreshold ||
+                Math.Abs(turningOutput - lastTurningOutput) > UpdateThreshold ||
+                shouldRun != lastRunState;
 
-            // Up/Down compensation
-            var yCombined = yPositive + yNegative;
-            var upDownDeadzone = GetSettingValue<float>(OSCLeashSetting.UpDownDeadzone);
-
-            if (yCombined >= upDownDeadzone)
-            {
-                if (lastRunState || lastVerticalOutput != 0 || lastHorizontalOutput != 0 || lastTurningOutput != 0)
-                {
-                    ResetMovement(player);
-                }
+            if (!hasSignificantChanges)
                 return;
-            }
 
-            // Up/Down Compensation
-            var upDownCompensation = GetSettingValue<float>(OSCLeashSetting.UpDownCompensation);
-            if (upDownCompensation != 0)
+            // Apply all changes in a batch
+            if (shouldRun != lastRunState)
             {
-                var yModifier = Clamp(1.0f - (yCombined * upDownCompensation));
-                if (yModifier != 0.0f)
-                {
-                    verticalOutput /= yModifier;
-                    horizontalOutput /= yModifier;
-                }
-            }
-
-            // Turning calculation
-            var turningOutput = CalculateTurningOutput();
-
-            // Apply movement based on stretch with delta updates
-            var runDeadzone = GetSettingValue<float>(OSCLeashSetting.RunDeadzone);
-            var newRunState = stretch > runDeadzone;
-
-            // Only update states that have changed
-            if (newRunState != lastRunState)
-            {
-                if (newRunState)
+                if (shouldRun)
                     player.Run();
                 else
                     player.StopRun();
-                lastRunState = newRunState;
+                lastRunState = shouldRun;
             }
 
-            // Apply movement only when values have changed significantly
-            const float updateThreshold = 0.01f;
-            
-            if (Math.Abs(verticalOutput - lastVerticalOutput) > updateThreshold)
+            if (Math.Abs(verticalOutput - lastVerticalOutput) > UpdateThreshold)
             {
                 player.MoveVertical(verticalOutput);
                 lastVerticalOutput = verticalOutput;
             }
             
-            if (Math.Abs(horizontalOutput - lastHorizontalOutput) > updateThreshold)
+            if (Math.Abs(horizontalOutput - lastHorizontalOutput) > UpdateThreshold)
             {
                 player.MoveHorizontal(horizontalOutput);
                 lastHorizontalOutput = horizontalOutput;
             }
             
-            if (Math.Abs(turningOutput - lastTurningOutput) > updateThreshold)
+            if (Math.Abs(turningOutput - lastTurningOutput) > UpdateThreshold)
             {
                 player.LookHorizontal(turningOutput);
                 lastTurningOutput = turningOutput;
             }
+
+            // Adaptive frame skipping based on performance
+            if (updateTimer.ElapsedMilliseconds > PerformanceThresholdMs)
+                frameCounter = 0; // Force next frame skip
         }
         catch (Exception ex)
         {
@@ -248,15 +245,58 @@ public class OSCLeashModule : Module
             {
                 var player = GetPlayer();
                 if (player != null)
-                {
                     ResetMovement(player);
-                }
             }
             catch
             {
                 // Ignore cleanup errors
             }
         }
+        finally
+        {
+            updateTimer.Stop();
+        }
+    }
+
+    private (float vertical, float horizontal, float turning, bool shouldRun) CalculateMovement()
+    {
+        var strengthMultiplier = GetSettingValue<float>(OSCLeashSetting.StrengthMultiplier);
+        var outputMultiplier = stretch * strengthMultiplier;
+        
+        var rawVerticalOutput = Clamp((zPositive - zNegative) * outputMultiplier);
+        var rawHorizontalOutput = Clamp((xPositive - xNegative) * outputMultiplier);
+
+        // Early exit if no significant movement
+        if (Math.Abs(rawVerticalOutput) < UpdateThreshold && Math.Abs(rawHorizontalOutput) < UpdateThreshold)
+            return (0, 0, 0, false);
+
+        var verticalOutput = SmoothValue(verticalSmoothingBuffer, rawVerticalOutput);
+        var horizontalOutput = SmoothValue(horizontalSmoothingBuffer, rawHorizontalOutput);
+
+        // Up/Down compensation
+        var yCombined = yPositive + yNegative;
+        var upDownDeadzone = GetSettingValue<float>(OSCLeashSetting.UpDownDeadzone);
+
+        if (yCombined >= upDownDeadzone)
+            return (0, 0, 0, false);
+
+        // Up/Down Compensation
+        var upDownCompensation = GetSettingValue<float>(OSCLeashSetting.UpDownCompensation);
+        if (upDownCompensation != 0)
+        {
+            var yModifier = Clamp(1.0f - (yCombined * upDownCompensation));
+            if (yModifier != 0.0f)
+            {
+                verticalOutput /= yModifier;
+                horizontalOutput /= yModifier;
+            }
+        }
+
+        var turningOutput = CalculateTurningOutput();
+        var runDeadzone = GetSettingValue<float>(OSCLeashSetting.RunDeadzone);
+        var shouldRun = stretch > runDeadzone;
+
+        return (verticalOutput, horizontalOutput, turningOutput, shouldRun);
     }
 
     private void ResetMovement(Player player)
@@ -289,6 +329,7 @@ public class OSCLeashModule : Module
 
         float turningOutput = 0f;
         switch (direction)
+        
         {
             case LeashDirection.North:
                 if (zPositive < turningGoal)
